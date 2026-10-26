@@ -1,21 +1,23 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import DashboardLayout from './components/layout/DashboardLayout'
-import Dashboard from './pages/Dashboard'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import DashboardLayout from "./components/layout/DashboardLayout";
+import Dashboard from "./pages/Dashboard";
+import Products from "./pages/Products";
+import Categories from './pages/Categories'
 
 const pageTitles = {
-  products: 'Products',
-  categories: 'Categories',
-  inventory: 'Inventory',
-  pos: 'Point of Sale',
-  sales: 'Sales',
-  customers: 'Customers',
-  suppliers: 'Suppliers',
-  purchases: 'Purchases',
-  expenses: 'Expenses',
-  reports: 'Reports',
-  notifications: 'Notifications',
-  settings: 'Settings',
-}
+  products: "Products",
+  categories: "Categories",
+  inventory: "Inventory",
+  pos: "Point of Sale",
+  sales: "Sales",
+  customers: "Customers",
+  suppliers: "Suppliers",
+  purchases: "Purchases",
+  expenses: "Expenses",
+  reports: "Reports",
+  notifications: "Notifications",
+  settings: "Settings",
+};
 
 function PlaceholderPage({ title }) {
   return (
@@ -23,11 +25,11 @@ function PlaceholderPage({ title }) {
       <div className="placeholder-icon">🚧</div>
       <h2>{title}</h2>
       <p>
-        The {title.toLowerCase()} module is under development.
-        It will be implemented in the next development phase.
+        The {title.toLowerCase()} module is under development. It will be
+        implemented in the next development phase.
       </p>
     </section>
-  )
+  );
 }
 
 function NotFound() {
@@ -37,7 +39,7 @@ function NotFound() {
       <h2>Page not found</h2>
       <p>The page you requested does not exist.</p>
     </section>
-  )
+  );
 }
 
 export default function App() {
@@ -46,18 +48,20 @@ export default function App() {
       <Routes>
         <Route element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
+          {Object.entries(pageTitles)
+  .filter(([path]) => path !== 'products' && path !== 'categories')
+  .map(([path, title]) => (
+    <Route
+      key={path}
+      path={path}
+      element={<PlaceholderPage title={title} />}
+    />
+  ))}
 
-          {Object.entries(pageTitles).map(([path, title]) => (
-            <Route
-              key={path}
-              path={path}
-              element={<PlaceholderPage title={title} />}
-            />
-          ))}
-
-          <Route path="*" element={<NotFound />} />
+<Route path="products" element={<Products />} />
+<Route path="categories" element={<Categories />} />
         </Route>
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
