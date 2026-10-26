@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { useProducts } from '../hooks/useProducts'
+import { useCustomers } from '../hooks/useCustomers'
 import { useSales } from '../hooks/useSales'
 import { formatCurrency } from '../utils/currency'
 
