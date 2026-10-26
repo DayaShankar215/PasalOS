@@ -22,7 +22,8 @@ const VAT_RATE = 0.13
 export default function POS() {
   const [products, setProducts] = useProducts()
   const [sales, setSales] = useSales()
-
+  const [customers] = useCustomers()
+const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [search, setSearch] = useState('')
   const [cart, setCart] = useState([])
   const [customerName, setCustomerName] = useState('')
