@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { initialProducts, productCategories } from "../data/mockData";
+import { useProducts } from "../hooks/useProducts";
 
 import { formatCurrency } from "../utils/currency";
 import ProductTable from "../components/products/ProductTable";
@@ -17,9 +18,7 @@ import ProductFilters from "../components/products/ProductFilters";
 import DeleteProductModal from "../components/products/DeleteProductModal";
 
 export default function Products() {
-  const [products, setProducts] = useState(() =>
-    initialProducts.map((product) => ({ ...product })),
-  );
+ const [products, setProducts] = useProducts()
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [isFormOpen, setIsFormOpen] = useState(false);

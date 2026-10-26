@@ -1818,3 +1818,68 @@ a {
     padding: 18px;
   }
 }
+
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #pos-receipt,
+  #pos-receipt * {
+    visibility: visible !important;
+  }
+
+  #pos-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 80mm;
+    margin: 0;
+    padding: 8px;
+    border: none;
+    box-shadow: none;
+    color: #000;
+    background: #fff;
+  }
+
+  #pos-receipt .border-dashed {
+    border-color: #999 !important;
+  }
+
+  @page {
+    margin: 5mm;
+    size: auto;
+  }
+}
+
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #sales-invoice,
+  #sales-invoice * {
+    visibility: visible !important;
+  }
+
+  #sales-invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 8px;
+    border: none;
+    box-shadow: none;
+    background: #fff;
+    color: #000;
+  }
+
+  @page {
+    margin: 8mm;
+    size: auto;
+  }
+}

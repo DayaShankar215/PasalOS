@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
@@ -15,23 +15,29 @@ import {
   Settings,
   Store,
   X,
-} from 'lucide-react'
+  History, // Add this
+} from "lucide-react";
 
 const menuItems = [
-  { label: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { label: 'Products', path: '/products', icon: Package },
-  { label: 'Categories', path: '/categories', icon: Tags },
-  { label: 'Inventory', path: '/inventory', icon: Boxes },
-  { label: 'Point of Sale', path: '/pos', icon: ShoppingCart },
-  { label: 'Sales', path: '/sales', icon: Receipt },
-  { label: 'Customers', path: '/customers', icon: Users },
-  { label: 'Suppliers', path: '/suppliers', icon: Truck },
-  { label: 'Purchases', path: '/purchases', icon: ShoppingBag },
-  { label: 'Expenses', path: '/expenses', icon: Wallet },
-  { label: 'Reports', path: '/reports', icon: BarChart3 },
-  { label: 'Notifications', path: '/notifications', icon: Bell },
-  { label: 'Settings', path: '/settings', icon: Settings },
-]
+  { label: "Dashboard", path: "/", icon: LayoutDashboard },
+  { label: "Products", path: "/products", icon: Package },
+  { label: "Categories", path: "/categories", icon: Tags },
+  { label: "Inventory", path: "/inventory", icon: Boxes },
+  { label: "Point of Sale", path: "/pos", icon: ShoppingCart },
+  { label: "Sales", path: "/sales", icon: Receipt },
+  { label: "Customers", path: "/customers", icon: Users },
+  { label: "Suppliers", path: "/suppliers", icon: Truck },
+  { label: "Purchases", path: "/purchases", icon: ShoppingBag },
+  { label: "Expenses", path: "/expenses", icon: Wallet },
+  { label: "Reports", path: "/reports", icon: BarChart3 },
+  { label: "Notifications", path: "/notifications", icon: Bell },
+  { label: "Settings", path: "/settings", icon: Settings },
+  {
+    label: "Stock History",
+    path: "/stock-history",
+    icon: History,
+  },
+];
 
 export default function Sidebar({ isOpen, onClose }) {
   return (
@@ -45,7 +51,7 @@ export default function Sidebar({ isOpen, onClose }) {
         />
       )}
 
-      <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
+      <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-brand">
           <div className="brand-icon">
             <Store size={24} />
@@ -73,16 +79,16 @@ export default function Sidebar({ isOpen, onClose }) {
             <NavLink
               key={path}
               to={path}
-              end={path === '/'}
+              end={path === "/"}
               onClick={onClose}
               className={({ isActive }) =>
-                `nav-link ${isActive ? 'nav-link-active' : ''}`
+                `nav-link ${isActive ? "nav-link-active" : ""}`
               }
             >
               <Icon size={19} strokeWidth={1.8} />
               <span>{label}</span>
 
-              {label === 'Notifications' && (
+              {label === "Notifications" && (
                 <span className="notification-count">3</span>
               )}
             </NavLink>
@@ -101,5 +107,5 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
       </aside>
     </>
-  )
+  );
 }

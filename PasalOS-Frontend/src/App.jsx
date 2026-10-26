@@ -2,7 +2,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
-import Categories from './pages/Categories'
+import Categories from "./pages/Categories";
+import Inventory from "./pages/Inventory";
+import StockMovementHistory from "./pages/StockMovementHistory";
+import Sales from './pages/Sales'
+import POS from "./pages/POS";
 
 const pageTitles = {
   products: "Products",
@@ -49,17 +53,24 @@ export default function App() {
         <Route element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           {Object.entries(pageTitles)
-  .filter(([path]) => path !== 'products' && path !== 'categories')
-  .map(([path, title]) => (
-    <Route
-      key={path}
-      path={path}
-      element={<PlaceholderPage title={title} />}
-    />
-  ))}
+            .filter(
+              ([path]) =>
+                !["products", "categories", "inventory", "stock-history","pos", "sales"].includes(path),
+            )
+            .map(([path, title]) => (
+              <Route
+                key={path}
+                path={path}
+                element={<PlaceholderPage title={title} />}
+              />
+            ))}
 
-<Route path="products" element={<Products />} />
-<Route path="categories" element={<Categories />} />
+          <Route path="products" element={<Products />} />
+          <Route path="inventory" element={<Inventory />} />
+          <Route path="stock-history" element={<StockMovementHistory />} />
+          <Route path="pos" element={<POS />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="sales" element={<Sales />} />
         </Route>
       </Routes>
     </BrowserRouter>
