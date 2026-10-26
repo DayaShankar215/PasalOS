@@ -23,15 +23,17 @@ export default function POS() {
   const [products, setProducts] = useProducts()
   const [sales, setSales] = useSales()
   const [customers] = useCustomers()
-const [selectedCustomerId, setSelectedCustomerId] = useState('')
+  const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [search, setSearch] = useState('')
   const [cart, setCart] = useState([])
-  const [customerName, setCustomerName] = useState('')
   const [discountPercent, setDiscountPercent] = useState('0')
   const [applyVat, setApplyVat] = useState(false)
   const [cashReceived, setCashReceived] = useState('')
   const [error, setError] = useState('')
   const [completedSale, setCompletedSale] = useState(null)
+  const selectedCustomer = customers.find(
+    (customer) => String(customer.id) === selectedCustomerId
+  )
 
   const availableProducts = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -154,7 +156,10 @@ const [selectedCustomerId, setSelectedCustomerId] = useState('')
     const sale = {
       id: `INV-${Date.now()}`,
       date: new Date().toISOString(),
-      customerName: customerName.trim() || 'Walk-in Customer',
+      customerId: selectedCustomer?.id || null,
+      customerName: selectedCustomer?.name || 'Walk-in Customer',
+      customerPhone: selectedCustomer?.phone || '',
+      customerEmail: selectedCustomer?.email || '',
       items: cart.map((item) => ({ ...item })),
       subtotal,
       discountPercent: safeDiscount,
@@ -187,7 +192,7 @@ const [selectedCustomerId, setSelectedCustomerId] = useState('')
     setCompletedSale(sale)
     setCart([])
     setSearch('')
-    setCustomerName('')
+    setSelectedCustomerId('')
     setDiscountPercent('0')
     setApplyVat(false)
     setCashReceived('')
@@ -446,16 +451,46 @@ const [selectedCustomerId, setSelectedCustomerId] = useState('')
           </div>
 
           <form onSubmit={completeSale} className="space-y-4 border-t border-gray-100 pt-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Customer (optional)
+            <div className="space-y-2">
+              <label
+                htmlFor="pos-customer"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Select Customer
               </label>
-              <input
-                value={customerName}
-                onChange={(event) => setCustomerName(event.target.value)}
-                placeholder="Walk-in customer"
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
-              />
+
+              <select
+                id="pos-customer"
+                value={selectedCustomerId}
+                onChange={(event) => setSelectedCustomerId(event.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">Walk-in Customer</option>
+
+                {customers.map((customer) => (
+                  <option key={customer.id} value={String(customer.id)}>
+                    {customer.name} — {customer.phone}
+                  </option>
+                ))}
+              </select>
+
+              {selectedCustomer && (
+                <div className="rounded-xl bg-blue-50 p-3 text-sm">
+                  <p className="font-semibold text-blue-900">
+                    {selectedCustomer.name}
+                  </p>
+
+                  <p className="mt-1 text-blue-700">
+                    Phone: {selectedCustomer.phone}
+                  </p>
+
+                  {selectedCustomer.email && (
+                    <p className="mt-1 text-blue-700">
+                      Email: {selectedCustomer.email}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
