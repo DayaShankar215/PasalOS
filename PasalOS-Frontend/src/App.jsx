@@ -1,90 +1,57 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import DashboardLayout from "./components/layout/DashboardLayout";
+
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Categories from "./pages/Categories";
 import Inventory from "./pages/Inventory";
 import StockMovementHistory from "./pages/StockMovementHistory";
-import Sales from './pages/Sales'
 import POS from "./pages/POS";
-import Customers from './pages/Customers'
-import Suppliers from './pages/Suppliers'
-import Purchases from './pages/Purchases'
-import Expenses from './pages/Expenses'
-import Reports from './pages/Reports'
-import Notifications from './pages/Notifications'
-import Settings from './pages/Settings'
-
-const pageTitles = {
-  products: "Products",
-  categories: "Categories",
-  inventory: "Inventory",
-  pos: "Point of Sale",
-  sales: "Sales",
-  customers: "Customers",
-  suppliers: "Suppliers",
-  purchases: "Purchases",
-  expenses: "Expenses",
-  reports: "Reports",
-  notifications: "Notifications",
-  settings: "Settings",
-};
-
-function PlaceholderPage({ title }) {
-  return (
-    <section className="panel placeholder-panel">
-      <div className="placeholder-icon">🚧</div>
-      <h2>{title}</h2>
-      <p>
-        The {title.toLowerCase()} module is under development. It will be
-        implemented in the next development phase.
-      </p>
-    </section>
-  );
-}
-
-function NotFound() {
-  return (
-    <section className="panel placeholder-panel">
-      <div className="placeholder-icon">🔎</div>
-      <h2>Page not found</h2>
-      <p>The page you requested does not exist.</p>
-    </section>
-  );
-}
+import Sales from "./pages/Sales";
+import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
+import Purchases from "./pages/Purchases";
+import Expenses from "./pages/Expenses";
+import Reports from "./pages/Reports";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<DashboardLayout />}>
+          {/* Dashboard */}
           <Route index element={<Dashboard />} />
-          {Object.entries(pageTitles)
-            .filter(
-              ([path]) =>
-                !["products", "categories", "inventory", "stock-history","pos", "sales", "customers", "suppliers", "purchases", "expenses", "reports", "notifications", "settings"].includes(path),
-            )
-            .map(([path, title]) => (
-              <Route
-                key={path}
-                path={path}
-                element={<PlaceholderPage title={title} />}
-              />
-            ))}
 
+          {/* Products and inventory */}
           <Route path="products" element={<Products />} />
-          <Route path="inventory" element={<Inventory />} />
-          <Route path="stock-history" element={<StockMovementHistory />} />
-          <Route path="pos" element={<POS />} />
           <Route path="categories" element={<Categories />} />
-          <Route path="customers" element={<Customers />} />
+          <Route path="inventory" element={<Inventory />} />
+          <Route
+            path="stock-history"
+            element={<StockMovementHistory />}
+          />
+
+          {/* Sales and POS */}
+          <Route path="pos" element={<POS />} />
           <Route path="sales" element={<Sales />} />
+
+          {/* Business management */}
+          <Route path="customers" element={<Customers />} />
           <Route path="suppliers" element={<Suppliers />} />
           <Route path="purchases" element={<Purchases />} />
           <Route path="expenses" element={<Expenses />} />
+
+          {/* Analytics and configuration */}
           <Route path="reports" element={<Reports />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="settings" element={<Settings />} />
+
+          {/* Unknown routes */}
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>
