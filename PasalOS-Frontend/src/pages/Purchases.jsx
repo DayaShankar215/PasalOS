@@ -494,7 +494,7 @@ export default function Purchases() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[850px] text-left text-sm">
+          <table className="w-full min-w-212.5 text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-5 py-4 font-semibold">Purchase</th>
@@ -939,7 +939,7 @@ export default function Purchases() {
               </div>
 
               <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <table className="w-full min-w-[450px] text-left text-sm">
+                <table className="w-full min-w-112.5 text-left text-sm">
                   <thead className="bg-gray-50 text-gray-500">
                     <tr>
                       <th className="px-4 py-3 font-medium">Product</th>
