@@ -10,6 +10,7 @@ import POS from "./pages/POS";
 import Customers from './pages/Customers'
 import Suppliers from './pages/Suppliers'
 import Purchases from './pages/Purchases'
+import Expenses from './pages/Expenses'
 
 const pageTitles = {
   products: "Products",
@@ -58,7 +59,7 @@ export default function App() {
           {Object.entries(pageTitles)
             .filter(
               ([path]) =>
-                !["products", "categories", "inventory", "stock-history","pos", "sales", "customers", "suppliers", "purchases"].includes(path),
+                !["products", "categories", "inventory", "stock-history","pos", "sales", "customers", "suppliers", "purchases", "expenses"].includes(path),
             )
             .map(([path, title]) => (
               <Route
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="sales" element={<Sales />} />
           <Route path="suppliers" element={<Suppliers />} />
           <Route path="purchases" element={<Purchases />} />
+          <Route path="expenses" element={<Expenses />} />
         </Route>
       </Routes>
     </BrowserRouter>
