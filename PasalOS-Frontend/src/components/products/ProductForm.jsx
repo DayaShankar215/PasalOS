@@ -168,22 +168,52 @@ export default function ProductForm({
               {errors.sku && <small>{errors.sku}</small>}
             </label>
 
-            <label className="form-field">
-              <span>Category *</span>
-              <select
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-              >
-                <option value="">Select category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              {errors.category && <small>{errors.category}</small>}
-            </label>
+        <label className="form-field">
+  <span>Category *</span>
+
+  <select
+    name="category"
+    value={
+      form.category && typeof form.category === 'object'
+        ? form.category.name ?? ''
+        : form.category
+    }
+    onChange={handleChange}
+  >
+    <option value="">Select category</option>
+
+    {(Array.isArray(categories) ? categories : [])
+      .map((category, index) => {
+        const isObject =
+          category !== null && typeof category === 'object'
+
+        return {
+          id: isObject
+            ? category.id ?? category.name ?? index
+            : category,
+          name: isObject
+            ? String(category.name ?? '')
+            : String(category ?? ''),
+          status: isObject ? category.status : 'Active',
+        }
+      })
+      .filter(
+        (category) =>
+          category.name.trim() !== '' &&
+          category.status !== 'Inactive'
+      )
+      .map((category, index) => (
+        <option
+          key={`${String(category.id)}-${category.name}-${index}`}
+          value={category.name}
+        >
+          {category.name}
+        </option>
+      ))}
+  </select>
+
+  {errors.category && <small>{errors.category}</small>}
+</label>
 
             <label className="form-field">
               <span>Cost Price (NPR) *</span>
