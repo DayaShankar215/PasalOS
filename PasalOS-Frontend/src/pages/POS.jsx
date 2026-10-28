@@ -16,12 +16,14 @@ import { useProducts } from '../hooks/useProducts'
 import { useCustomers } from '../hooks/useCustomers'
 import { useSales } from '../hooks/useSales'
 import { formatCurrency } from '../utils/currency'
+import { useStockMovements } from '../hooks/useStockMovements'
 
 const VAT_RATE = 0.13
 
 export default function POS() {
   const [products, setProducts] = useProducts()
   const [sales, setSales] = useSales()
+  const [, setMovements] = useStockMovements()
   const [customers] = useCustomers()
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [search, setSearch] = useState('')
