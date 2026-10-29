@@ -324,3 +324,8 @@ ON DUPLICATE KEY UPDATE
 SELECT id, shop_name, email
 FROM shops
 WHERE id = 1;
+
+DESCRIBE purchases;
+DESCRIBE purchase_items;
+DESCRIBE products;
+DESCRIBE stock_movements;
