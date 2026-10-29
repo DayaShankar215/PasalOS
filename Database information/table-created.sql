@@ -308,3 +308,19 @@ CREATE TABLE IF NOT EXISTS stock_movements (
 
 SHOW TABLES;
 
+USE pasalos_db;
+
+INSERT INTO shops (id, shop_name, owner_name, email, status)
+VALUES (
+    1,
+    'PasalOS Development Shop',
+    'Development Owner',
+    'dev-shop@pasalos.local',
+    'active'
+)
+ON DUPLICATE KEY UPDATE
+    shop_name = 'PasalOS Development Shop';
+
+SELECT id, shop_name, email
+FROM shops
+WHERE id = 1;

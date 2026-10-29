@@ -1,4 +1,3 @@
-
 require('dotenv').config()
 
 const express = require('express')
@@ -7,11 +6,10 @@ const pool = require('./config/db')
 
 const app = express()
 
-// Middleware
 app.use(cors())
 app.use(express.json())
 
-// Welcome route
+// Basic API route
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to PasalOS API',
@@ -19,7 +17,7 @@ app.get('/', (req, res) => {
   })
 })
 
-// Health check: test the MySQL connection
+// MySQL health check
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1')
@@ -40,14 +38,17 @@ app.get('/api/health', async (req, res) => {
   }
 })
 
-// Handle unknown routes
+// Products API
+app.use('/api/products', require('./routes/products'))
+
+// Unknown routes
 app.use((req, res) => {
   res.status(404).json({
+    success: false,
     message: 'API route not found',
   })
 })
 
-// Start server
 const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {
