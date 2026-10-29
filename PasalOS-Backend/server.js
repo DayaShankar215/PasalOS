@@ -50,6 +50,9 @@ app.use('/api/customers', require('./routes/customers'))
 // Suppliers API
 app.use('/api/suppliers', require('./routes/suppliers'))
 
+// Expenses API
+app.use('/api/expenses', require('./routes/expenses'))
+
 // Unknown routes
 app.use((req, res) => {
   res.status(404).json({
