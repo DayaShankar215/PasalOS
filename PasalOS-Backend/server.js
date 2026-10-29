@@ -47,6 +47,9 @@ app.use('/api/categories', require('./routes/categories'))
 // Customers API
 app.use('/api/customers', require('./routes/customers'))
 
+// Suppliers API
+app.use('/api/suppliers', require('./routes/suppliers'))
+
 // Unknown routes
 app.use((req, res) => {
   res.status(404).json({
