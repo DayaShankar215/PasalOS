@@ -41,6 +41,9 @@ app.get('/api/health', async (req, res) => {
 // Products API
 app.use('/api/products', require('./routes/products'))
 
+// Categories API
+app.use('/api/categories', require('./routes/categories'))
+
 // Unknown routes
 app.use((req, res) => {
   res.status(404).json({
