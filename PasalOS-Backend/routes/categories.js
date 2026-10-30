@@ -9,12 +9,14 @@ const {
   deleteCategory,
 } = require('../controllers/categoriesController')
 
-const { authenticateToken, authorizeRoles } = require('../middleware/authMiddleware')
+const {
+  authenticateToken,
+  authorizeRoles,
+} = require('../middleware/authMiddleware')
 
 router.use(authenticateToken)
 
-// GET all categories
-routrouter.get('/', authorizeRoles('owner', 'manager', 'cashier'), getCategories)
+router.get('/', authorizeRoles('owner', 'manager', 'cashier'), getCategories)
 router.get('/:id', authorizeRoles('owner', 'manager', 'cashier'), getCategoryById)
 
 router.post('/', authorizeRoles('owner', 'manager'), createCategory)
