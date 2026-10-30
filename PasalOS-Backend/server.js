@@ -65,6 +65,9 @@ app.use('/api/stock-movements', require('./routes/stockMovements'))
 // Dashboard API
 app.use('/api/dashboard', require('./routes/dashboard'))
 
+// Authentication API
+app.use('/api/auth', require('./routes/auth'))
+
 // Unknown routes
 app.use((req, res) => {
   res.status(404).json({
