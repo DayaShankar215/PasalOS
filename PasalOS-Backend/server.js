@@ -53,6 +53,9 @@ app.use('/api/suppliers', require('./routes/suppliers'))
 // Expenses API
 app.use('/api/expenses', require('./routes/expenses'))
 
+// Purchases API
+app.use('/api/purchases', require('./routes/purchases'))
+
 // Unknown routes
 app.use((req, res) => {
   res.status(404).json({
