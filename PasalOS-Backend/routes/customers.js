@@ -9,14 +9,14 @@ const {
   deleteCustomer,
 } = require('../controllers/customersController')
 
-const { authenticateToken } = require('../middleware/authMiddleware')
+const { authenticateToken, authorizeRoles } = require('../middleware/authMiddleware')
 
 router.use(authenticateToken)
 
-router.get('/', getCustomers)
-router.get('/:id', getCustomerById)
-router.post('/', createCustomer)
-router.put('/:id', updateCustomer)
-router.delete('/:id', deleteCustomer)
+router.get('/', authorizeRoles('owner', 'manager', 'cashier'), getCustomers)
+router.get('/:id', authorizeRoles('owner', 'manager', 'cashier'), getCustomerById)
+router.post('/', authorizeRoles('owner', 'manager', 'cashier'), createCustomer)
+router.put('/:id', authorizeRoles('owner', 'manager', 'cashier'), updateCustomer)
+router.delete('/:id', authorizeRoles('owner', 'manager', 'cashier'), deleteCustomer)
 
 module.exports = router

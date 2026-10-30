@@ -6,11 +6,10 @@ const {
   getStockMovementById,
 } = require('../controllers/stockMovementsController')
 
-const { authenticateToken } = require('../middleware/authMiddleware')
+const { authenticateToken, authorizeRoles} = require('../middleware/authMiddleware')
 
 router.use(authenticateToken)
 
-router.get('/', getStockMovements)
-router.get('/:id', getStockMovementById)
-
+router.get('/', authorizeRoles('owner', 'manager', 'cashier'), getStockMovements)
+router.get('/:id', authorizeRoles('owner', 'manager', 'cashier'), getStockMovementById)
 module.exports = router

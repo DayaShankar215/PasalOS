@@ -8,12 +8,12 @@ const {
   updatePurchaseStatus,
 } = require("../controllers/purchasesController");
 
-const { authenticateToken } = require('../middleware/authMiddleware')
+const { authenticateToken, authorizeRoles } = require('../middleware/authMiddleware')
 
 router.use(authenticateToken)
 
-router.get("/", getPurchases);
-router.get("/:id", getPurchaseById);
-router.post("/", createPurchase);
-router.patch("/:id/status", updatePurchaseStatus);
+router.get('/', authorizeRoles('owner', 'manager'), getPurchases)
+router.get('/:id', authorizeRoles('owner', 'manager'), getPurchaseById)
+router.post('/', authorizeRoles('owner', 'manager'), createPurchase)
+router.patch('/:id/status', authorizeRoles('owner', 'manager'), updatePurchaseStatus)
 module.exports = router;

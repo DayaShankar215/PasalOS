@@ -9,14 +9,14 @@ const {
   deleteExpense,
 } = require('../controllers/expensesController')
 
-const { authenticateToken } = require('../middleware/authMiddleware')
+const { authenticateToken, authorizeRoles } = require('../middleware/authMiddleware')
 
 router.use(authenticateToken)
 
-router.get('/', getExpenses)
-router.get('/:id', getExpenseById)
-router.post('/', createExpense)
-router.put('/:id', updateExpense)
-router.delete('/:id', deleteExpense)
+router.get('/', authorizeRoles('owner', 'manager'), getExpenses)
+router.get('/:id', authorizeRoles('owner', 'manager'), getExpenseById)
+router.post('/', authorizeRoles('owner', 'manager'), createExpense)
+router.put('/:id', authorizeRoles('owner', 'manager'), updateExpense)
+router.delete('/:id', authorizeRoles('owner', 'manager'), deleteExpense)
 
 module.exports = router

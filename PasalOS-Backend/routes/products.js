@@ -9,14 +9,15 @@ const {
   deleteProduct,
 } = require('../controllers/productsController')
 
-const { authenticateToken } = require('../middleware/authMiddleware')
+const { authenticateToken, authorizeRoles} = require('../middleware/authMiddleware')
 
 router.use(authenticateToken)
 
-router.get('/', getProducts)
-router.get('/:id', getProductById)
-router.post('/', createProduct)
-router.put('/:id', updateProduct)
-router.delete('/:id', deleteProduct)
+router.get('/', authorizeRoles('owner', 'manager', 'cashier'), getProducts)
+router.get('/:id', authorizeRoles('owner', 'manager', 'cashier'), getProductById)
+
+router.post('/', authorizeRoles('owner', 'manager'), createProduct)
+router.put('/:id', authorizeRoles('owner', 'manager'), updateProduct)
+router.delete('/:id', authorizeRoles('owner', 'manager'), deleteProduct)
 
 module.exports = router
