@@ -9,10 +9,9 @@ const {
   deleteCategory,
 } = require('../controllers/categoriesController')
 
-const developmentShop = require('../middleware/developmentShop')
+const { authenticateToken } = require('../middleware/authMiddleware')
 
-// Development-only shop identification
-router.use(developmentShop)
+router.use(authenticateToken)
 
 // GET all categories
 router.get('/', getCategories)

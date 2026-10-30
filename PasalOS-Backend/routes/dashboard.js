@@ -5,9 +5,9 @@ const {
   getDashboardData,
 } = require('../controllers/dashboardController')
 
-const developmentShop = require('../middleware/developmentShop')
+const { authenticateToken } = require('../middleware/authMiddleware')
 
-router.use(developmentShop)
+router.use(authenticateToken)
 
 router.get('/', getDashboardData)
 

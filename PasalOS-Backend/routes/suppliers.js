@@ -9,9 +9,9 @@ const {
   deleteSupplier,
 } = require('../controllers/suppliersController')
 
-const developmentShop = require('../middleware/developmentShop')
+const { authenticateToken } = require('../middleware/authMiddleware')
 
-router.use(developmentShop)
+router.use(authenticateToken)
 
 router.get('/', getSuppliers)
 router.get('/:id', getSupplierById)

@@ -9,9 +9,9 @@ const {
   deleteExpense,
 } = require('../controllers/expensesController')
 
-const developmentShop = require('../middleware/developmentShop')
+const { authenticateToken } = require('../middleware/authMiddleware')
 
-router.use(developmentShop)
+router.use(authenticateToken)
 
 router.get('/', getExpenses)
 router.get('/:id', getExpenseById)
