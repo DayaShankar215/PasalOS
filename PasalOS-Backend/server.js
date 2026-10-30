@@ -62,6 +62,9 @@ app.use('/api/sales', require('./routes/sales'))
 // Stock Movements API
 app.use('/api/stock-movements', require('./routes/stockMovements'))
 
+// Dashboard API
+app.use('/api/dashboard', require('./routes/dashboard'))
+
 // Unknown routes
 app.use((req, res) => {
   res.status(404).json({
