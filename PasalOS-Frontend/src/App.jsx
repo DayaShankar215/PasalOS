@@ -1,8 +1,17 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
+// Layout
 import DashboardLayout from './components/layout/DashboardLayout'
 
+// Authentication
+import Login from './pages/Login'
+import Register from './pages/Register'
+import ProtectedRoute from './components/ProtectedRoute'
+import PermissionRoute from './components/PermissionRoute'
+import { AuthProvider, useAuth } from './context/AuthContext'
+
+// Pages
 import Dashboard from './pages/Dashboard'
 import Products from './pages/Products'
 import Categories from './pages/Categories'
@@ -17,82 +26,251 @@ import Expenses from './pages/Expenses'
 import Reports from './pages/Reports'
 import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
+import Unauthorized from './pages/Unauthorized'
 import NotFound from './pages/NotFound'
 
-import Login from './pages/Login'
-import Register from './pages/Register'
-
-import ProtectedRoute from './components/ProtectedRoute'
-import { AuthProvider, useAuth } from './context/AuthContext'
-
+// Global state providers
 import { ProductsProvider } from './hooks/useProducts'
 import { StockMovementsProvider } from './hooks/useStockMovements'
 
-// Redirect authenticated users away from login/register pages
-const PublicRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth()
 
-  return isAuthenticated ? <Navigate to="/" replace /> : children
+// Redirect authenticated users away from Login and Register
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuth()
+
+  if (!isAuthenticated) {
+    return children
+  }
+
+  const redirectPath =
+    user?.role === 'cashier' ? '/pos' : '/'
+
+  return <Navigate to={redirectPath} replace />
 }
 
+
+// Redirect authenticated users to their appropriate home page
+const HomeRedirect = () => {
+  const { user } = useAuth()
+
+  const homePath =
+    user?.role === 'cashier' ? '/pos' : '/'
+
+  return <Navigate to={homePath} replace />
+}
+
+
+// Main application routes
+const AppRoutes = () => {
+  return (
+    <Routes>
+
+      {/* ======================================
+          PUBLIC ROUTES
+      ====================================== */}
+
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        }
+      />
+
+
+      {/* ======================================
+          PROTECTED ROUTES
+      ====================================== */}
+
+      <Route element={<ProtectedRoute />}>
+
+        {/* Unauthorized page */}
+        <Route
+          path="/unauthorized"
+          element={<Unauthorized />}
+        />
+
+        {/* Main dashboard layout */}
+        <Route element={<DashboardLayout />}>
+
+          {/* Home route */}
+          <Route
+            index
+            element={<HomeRedirect />}
+          />
+
+          {/* Dashboard */}
+          <Route
+            path="dashboard"
+            element={
+              <PermissionRoute module="dashboard">
+                <Dashboard />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Products */}
+          <Route
+            path="products"
+            element={
+              <PermissionRoute module="products">
+                <Products />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Categories */}
+          <Route
+            path="categories"
+            element={
+              <PermissionRoute module="categories">
+                <Categories />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Inventory */}
+          <Route
+            path="inventory"
+            element={
+              <PermissionRoute module="inventory">
+                <Inventory />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Stock Movement History */}
+          <Route
+            path="stock-history"
+            element={
+              <PermissionRoute module="stockHistory">
+                <StockMovementHistory />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Point of Sale */}
+          <Route
+            path="pos"
+            element={
+              <PermissionRoute module="pos">
+                <POS />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Sales */}
+          <Route
+            path="sales"
+            element={
+              <PermissionRoute module="sales">
+                <Sales />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Customers */}
+          <Route
+            path="customers"
+            element={
+              <PermissionRoute module="customers">
+                <Customers />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Suppliers */}
+          <Route
+            path="suppliers"
+            element={
+              <PermissionRoute module="suppliers">
+                <Suppliers />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Purchases */}
+          <Route
+            path="purchases"
+            element={
+              <PermissionRoute module="purchases">
+                <Purchases />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Expenses */}
+          <Route
+            path="expenses"
+            element={
+              <PermissionRoute module="expenses">
+                <Expenses />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Reports */}
+          <Route
+            path="reports"
+            element={
+              <PermissionRoute module="reports">
+                <Reports />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Notifications */}
+          <Route
+            path="notifications"
+            element={
+              <PermissionRoute module="notifications">
+                <Notifications />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Settings */}
+          <Route
+            path="settings"
+            element={
+              <PermissionRoute module="settings">
+                <Settings />
+              </PermissionRoute>
+            }
+          />
+
+          {/* Page not found */}
+          <Route
+            path="*"
+            element={<NotFound />}
+          />
+
+        </Route>
+      </Route>
+
+    </Routes>
+  )
+}
+
+
+// Root application
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <ProductsProvider>
           <StockMovementsProvider>
-            <Routes>
-
-              {/* Public routes */}
-              <Route
-                path="/login"
-                element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
-                }
-              />
-
-              <Route
-                path="/register"
-                element={
-                  <PublicRoute>
-                    <Register />
-                  </PublicRoute>
-                }
-              />
-
-              {/* Protected dashboard routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route element={<DashboardLayout />}>
-                  <Route index element={<Dashboard />} />
-
-                  <Route path="products" element={<Products />} />
-                  <Route path="categories" element={<Categories />} />
-                  <Route path="inventory" element={<Inventory />} />
-
-                  <Route
-                    path="stock-history"
-                    element={<StockMovementHistory />}
-                  />
-
-                  <Route path="pos" element={<POS />} />
-                  <Route path="sales" element={<Sales />} />
-
-                  <Route path="customers" element={<Customers />} />
-                  <Route path="suppliers" element={<Suppliers />} />
-                  <Route path="purchases" element={<Purchases />} />
-                  <Route path="expenses" element={<Expenses />} />
-
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="notifications" element={<Notifications />} />
-                  <Route path="settings" element={<Settings />} />
-
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Route>
-
-            </Routes>
+            <AppRoutes />
           </StockMovementsProvider>
         </ProductsProvider>
       </AuthProvider>
