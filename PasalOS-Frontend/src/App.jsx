@@ -17,11 +17,15 @@ import Reports from './pages/Reports'
 import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
 import NotFound from './pages/NotFound'
+import { testApiConnection } from './services/testApi'
 
 import { ProductsProvider } from './hooks/useProducts'
 import { StockMovementsProvider } from './hooks/useStockMovements'
 
+
+
 export default function App() {
+  testApiConnection()
   return (
     <BrowserRouter>
       <ProductsProvider>
