@@ -182,3 +182,16 @@
     border-right-color: var(--border);
   }
 }
+
+.logout-button {
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  color: #991b1b;
+}
