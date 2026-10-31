@@ -18,6 +18,6 @@ router.post('/login', login)
 
 // Protected routes
 router.put('/profile', authenticateToken, updateProfile)
-router.put('/change-password', authenticateToken, changePassword)
+router.patch('/change-password', authenticateToken, changePassword)
 
 module.exports = router
