@@ -343,8 +343,216 @@ const login = async (req, res) => {
     })
   }
 }
+// PUT /api/auth/profile
+// Update the logged-in user's personal information.
+const updateProfile = async (req, res) => {
+  try {
+    const { full_name, email } = req.body
 
+    if (
+      typeof full_name !== 'string' ||
+      typeof email !== 'string'
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Full name and email are required.',
+      })
+    }
+
+    const normalizedName = full_name.trim()
+    const normalizedEmail = email.trim().toLowerCase()
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!normalizedName || normalizedName.length > 150) {
+      return res.status(400).json({
+        success: false,
+        message: 'Full name must be between 1 and 150 characters.',
+      })
+    }
+
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address.',
+      })
+    }
+
+    // Check whether another user in this shop already uses this email.
+    const [duplicates] = await pool.execute(
+      `SELECT id
+       FROM users
+       WHERE shop_id = ?
+       AND email = ?
+       AND id != ?
+       LIMIT 1`,
+      [req.shopId, normalizedEmail, req.user.id]
+    )
+
+    if (duplicates.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'This email is already used by another user in your shop.',
+      })
+    }
+
+    await pool.execute(
+      `UPDATE users
+       SET full_name = ?, email = ?
+       WHERE id = ? AND shop_id = ?`,
+      [
+        normalizedName,
+        normalizedEmail,
+        req.user.id,
+        req.shopId,
+      ]
+    )
+
+    // Return the updated user information.
+    const [users] = await pool.execute(
+      `SELECT id, shop_id, full_name, email, role
+       FROM users
+       WHERE id = ? AND shop_id = ?
+       LIMIT 1`,
+      [req.user.id, req.shopId]
+    )
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found.',
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully.',
+      data: {
+        user: users[0],
+      },
+    })
+  } catch (error) {
+    console.error('Update profile error:', error)
+
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({
+        success: false,
+        message: 'This email is already in use.',
+      })
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update profile.',
+    })
+  }
+}
+
+
+// PATCH /api/auth/change-password
+// Change the logged-in user's password.
+const changePassword = async (req, res) => {
+  try {
+    const {
+      current_password,
+      new_password,
+      confirm_password,
+    } = req.body
+
+    if (
+      typeof current_password !== 'string' ||
+      typeof new_password !== 'string' ||
+      typeof confirm_password !== 'string'
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'All password fields are required.',
+      })
+    }
+
+    if (
+      new_password.length < 8 ||
+      new_password.length > 72
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be between 8 and 72 characters.',
+      })
+    }
+
+    if (new_password !== confirm_password) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirmation do not match.',
+      })
+    }
+
+    if (current_password === new_password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your new password must be different from your current password.',
+      })
+    }
+
+    // Retrieve the logged-in user's password hash.
+    const [users] = await pool.execute(
+      `SELECT password_hash
+       FROM users
+       WHERE id = ? AND shop_id = ?
+       LIMIT 1`,
+      [req.user.id, req.shopId]
+    )
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found.',
+      })
+    }
+
+    // Verify the current password.
+    const passwordMatches = await bcrypt.compare(
+      current_password,
+      users[0].password_hash
+    )
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        success: false,
+        message: 'Your current password is incorrect.',
+      })
+    }
+
+    // Hash and save the new password.
+    const newPasswordHash = await bcrypt.hash(new_password, 12)
+
+    await pool.execute(
+      `UPDATE users
+       SET password_hash = ?
+       WHERE id = ? AND shop_id = ?`,
+      [
+        newPasswordHash,
+        req.user.id,
+        req.shopId,
+      ]
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password changed successfully. Please log in again.',
+    })
+  } catch (error) {
+    console.error('Change password error:', error)
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to change password.',
+    })
+  }
+}
 module.exports = {
   register,
   login,
+  updateProfile,
+  changePassword,
 }
