@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react'
 import {
   Search,
@@ -12,8 +13,11 @@ import {
   Building2,
   Users,
   Download,
+  ShieldAlert,
 } from 'lucide-react'
 import { useSuppliers } from '../hooks/useSuppliers'
+import { useAuth } from '../context/AuthContext'
+import { hasPermission } from '../utils/permissions'
 
 const emptyForm = {
   name: '',
@@ -25,6 +29,10 @@ const emptyForm = {
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useSuppliers()
+  const { user } = useAuth()
+
+  const canViewSuppliers = hasPermission(user?.role, 'suppliers', 'view')
+  const canManageSuppliers = hasPermission(user?.role, 'suppliers', 'full')
 
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -50,6 +58,8 @@ export default function Suppliers() {
   }, [suppliers, search])
 
   const openAddForm = () => {
+    if (!canManageSuppliers) return
+
     setForm(emptyForm)
     setEditingId(null)
     setError('')
@@ -57,6 +67,8 @@ export default function Suppliers() {
   }
 
   const openEditForm = (supplier) => {
+    if (!canManageSuppliers) return
+
     setForm({
       name: supplier.name || '',
       company: supplier.company || '',
@@ -88,6 +100,9 @@ export default function Suppliers() {
 
   const handleSubmit = (event) => {
     event.preventDefault()
+
+    if (!canManageSuppliers) return
+
     setError('')
 
     const name = form.name.trim()
@@ -103,7 +118,8 @@ export default function Suppliers() {
 
     const duplicatePhone = suppliers.some(
       (supplier) =>
-        String(supplier.phone).trim().toLowerCase() === phone.toLowerCase() &&
+        String(supplier.phone || '').trim().toLowerCase() ===
+          phone.toLowerCase() &&
         supplier.id !== editingId,
     )
 
@@ -151,14 +167,25 @@ export default function Suppliers() {
   }
 
   const confirmDelete = () => {
+    if (!canManageSuppliers || deleteId === null) return
+
     setSuppliers((previous) =>
       previous.filter((supplier) => supplier.id !== deleteId),
     )
+
     setDeleteId(null)
   }
 
   const exportCSV = () => {
-    const headers = ['Supplier Name', 'Company', 'Phone', 'Email', 'Address']
+    if (!canManageSuppliers || filteredSuppliers.length === 0) return
+
+    const headers = [
+      'Supplier Name',
+      'Company',
+      'Phone',
+      'Email',
+      'Address',
+    ]
 
     const escapeCSV = (value) =>
       `"${String(value ?? '').replace(/"/g, '""')}"`
@@ -176,6 +203,7 @@ export default function Suppliers() {
     )
 
     const csv = [headers.map(escapeCSV).join(','), ...rows].join('\r\n')
+
     const blob = new Blob(['\uFEFF', csv], {
       type: 'text/csv;charset=utf-8;',
     })
@@ -185,9 +213,11 @@ export default function Suppliers() {
 
     link.href = url
     link.download = 'pasalos-suppliers.csv'
+
     document.body.appendChild(link)
     link.click()
     link.remove()
+
     URL.revokeObjectURL(url)
   }
 
@@ -197,6 +227,28 @@ export default function Suppliers() {
   const totalSuppliers = suppliers.length
   const withEmail = suppliers.filter((supplier) => supplier.email).length
   const withCompany = suppliers.filter((supplier) => supplier.company).length
+
+  // Restrict access for unauthorized roles.
+  if (!canViewSuppliers) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+            <ShieldAlert size={28} />
+          </div>
+
+          <h2 className="mt-5 text-xl font-bold text-gray-900">
+            Access Restricted
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-gray-500">
+            You do not have permission to access the Suppliers module.
+            Please contact your shop owner if you need access.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -211,14 +263,16 @@ export default function Suppliers() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={openAddForm}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Add Supplier
-        </button>
+        {canManageSuppliers && (
+          <button
+            type="button"
+            onClick={openAddForm}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Add Supplier
+          </button>
+        )}
       </div>
 
       {/* Summary cards */}
@@ -249,7 +303,10 @@ export default function Suppliers() {
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-semibold text-gray-900">Supplier Directory</h2>
+            <h2 className="font-semibold text-gray-900">
+              Supplier Directory
+            </h2>
+
             <p className="mt-1 text-xs text-gray-500">
               {filteredSuppliers.length} supplier
               {filteredSuppliers.length === 1 ? '' : 's'} found
@@ -272,14 +329,17 @@ export default function Suppliers() {
               />
             </div>
 
-            <button
-              type="button"
-              onClick={exportCSV}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              <Download size={17} />
-              Export CSV
-            </button>
+            {canManageSuppliers && (
+              <button
+                type="button"
+                onClick={exportCSV}
+                disabled={filteredSuppliers.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Download size={17} />
+                Export CSV
+              </button>
+            )}
           </div>
         </div>
 
@@ -292,13 +352,19 @@ export default function Suppliers() {
                 <th className="px-6 py-4">Phone</th>
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Address</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+
+                {canManageSuppliers && (
+                  <th className="px-6 py-4 text-right">Actions</th>
+                )}
               </tr>
             </thead>
 
             <tbody className="divide-y divide-gray-100">
               {filteredSuppliers.map((supplier) => (
-                <tr key={supplier.id} className="transition hover:bg-gray-50">
+                <tr
+                  key={supplier.id}
+                  className="transition hover:bg-gray-50"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-semibold text-blue-700">
@@ -306,7 +372,7 @@ export default function Suppliers() {
                       </div>
 
                       <span className="font-medium text-gray-900">
-                        {supplier.name}
+                        {supplier.name || '—'}
                       </span>
                     </div>
                   </td>
@@ -318,7 +384,7 @@ export default function Suppliers() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Phone size={15} className="shrink-0 text-gray-400" />
-                      {supplier.phone}
+                      {supplier.phone || '—'}
                     </div>
                   </td>
 
@@ -338,35 +404,40 @@ export default function Suppliers() {
                     </div>
                   </td>
 
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openEditForm(supplier)}
-                        title="Edit supplier"
-                        aria-label={`Edit ${supplier.name}`}
-                        className="rounded-lg p-2 text-gray-500 transition hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <Pencil size={17} />
-                      </button>
+                  {canManageSuppliers && (
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEditForm(supplier)}
+                          title="Edit supplier"
+                          aria-label={`Edit ${supplier.name || 'supplier'}`}
+                          className="rounded-lg p-2 text-gray-500 transition hover:bg-blue-50 hover:text-blue-600"
+                        >
+                          <Pencil size={17} />
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setDeleteId(supplier.id)}
-                        title="Delete supplier"
-                        aria-label={`Delete ${supplier.name}`}
-                        className="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 size={17} />
-                      </button>
-                    </div>
-                  </td>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteId(supplier.id)}
+                          title="Delete supplier"
+                          aria-label={`Delete ${supplier.name || 'supplier'}`}
+                          className="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
 
               {filteredSuppliers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center">
+                  <td
+                    colSpan={canManageSuppliers ? 6 : 5}
+                    className="px-6 py-16 text-center"
+                  >
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400">
                       <Users size={26} />
                     </div>
@@ -381,7 +452,7 @@ export default function Suppliers() {
                         : 'Add your first supplier to start building your supplier directory.'}
                     </p>
 
-                    {!search && (
+                    {!search && canManageSuppliers && (
                       <button
                         type="button"
                         onClick={openAddForm}
@@ -400,7 +471,7 @@ export default function Suppliers() {
       </div>
 
       {/* Add / Edit modal */}
-      {showForm && (
+      {canManageSuppliers && showForm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900/50 p-4"
           onMouseDown={(event) => {
@@ -413,6 +484,7 @@ export default function Suppliers() {
                 <h2 className="text-lg font-bold text-gray-900">
                   {editingId !== null ? 'Edit Supplier' : 'Add New Supplier'}
                 </h2>
+
                 <p className="mt-1 text-sm text-gray-500">
                   Enter the supplier's contact information.
                 </p>
@@ -519,7 +591,7 @@ export default function Suppliers() {
       )}
 
       {/* Delete confirmation */}
-      {deleteId !== null && (
+      {canManageSuppliers && deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600">
@@ -531,8 +603,8 @@ export default function Suppliers() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-gray-500">
-              Are you sure you want to delete this supplier? This action cannot
-              be undone.
+              Are you sure you want to delete this supplier? This action
+              cannot be undone.
             </p>
 
             <div className="mt-6 flex justify-end gap-3">
