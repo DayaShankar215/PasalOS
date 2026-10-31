@@ -1,3 +1,4 @@
+
 import { Edit2, Trash2, FolderOpen, Package } from 'lucide-react'
 
 export default function CategoryTable({
@@ -5,7 +6,9 @@ export default function CategoryTable({
   products,
   onEdit,
   onDelete,
+  canManageCategories = false,
 }) {
+  // Empty categories state
   if (categories.length === 0) {
     return (
       <div className="products-empty">
@@ -19,13 +22,16 @@ export default function CategoryTable({
   return (
     <div className="table-container products-table-container">
       <table className="data-table products-table">
+
         <thead>
           <tr>
             <th>Category</th>
             <th>Description</th>
             <th>Products</th>
             <th>Status</th>
-            <th>Actions</th>
+
+            {/* Actions visible to Owner and Manager */}
+            {canManageCategories && <th>Actions</th>}
           </tr>
         </thead>
 
@@ -37,6 +43,8 @@ export default function CategoryTable({
 
             return (
               <tr key={category.id}>
+
+                {/* Category Name */}
                 <td>
                   <div className="product-name-cell">
                     <div className="product-avatar category-avatar">
@@ -47,6 +55,7 @@ export default function CategoryTable({
                       <span className="product-name">
                         {category.name}
                       </span>
+
                       <span className="product-unit">
                         CAT-{String(category.id).padStart(3, '0')}
                       </span>
@@ -54,16 +63,20 @@ export default function CategoryTable({
                   </div>
                 </td>
 
+                {/* Description */}
                 <td className="category-description">
                   {category.description || '—'}
                 </td>
 
+                {/* Product Count */}
                 <td>
                   <span className="category-product-count">
-                    {productCount} {productCount === 1 ? 'product' : 'products'}
+                    {productCount}{' '}
+                    {productCount === 1 ? 'product' : 'products'}
                   </span>
                 </td>
 
+                {/* Category Status */}
                 <td>
                   <span
                     className={
@@ -77,33 +90,40 @@ export default function CategoryTable({
                   </span>
                 </td>
 
-                <td>
-                  <div className="product-actions">
-                    <button
-                      type="button"
-                      className="icon-button edit-button"
-                      onClick={() => onEdit(category)}
-                      title="Edit category"
-                      aria-label={`Edit ${category.name}`}
-                    >
-                      <Edit2 size={16} />
-                    </button>
+                {/* Edit and Delete Actions */}
+                {canManageCategories && (
+                  <td>
+                    <div className="product-actions">
 
-                    <button
-                      type="button"
-                      className="icon-button delete-button"
-                      onClick={() => onDelete(category)}
-                      title="Delete category"
-                      aria-label={`Delete ${category.name}`}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+                      <button
+                        type="button"
+                        className="icon-button edit-button"
+                        onClick={() => onEdit(category)}
+                        title="Edit category"
+                        aria-label={`Edit ${category.name}`}
+                      >
+                        <Edit2 size={16} />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="icon-button delete-button"
+                        onClick={() => onDelete(category)}
+                        title="Delete category"
+                        aria-label={`Delete ${category.name}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+
+                    </div>
+                  </td>
+                )}
+
               </tr>
             )
           })}
         </tbody>
+
       </table>
     </div>
   )
