@@ -1,3 +1,4 @@
+
 import { Search, Plus, SlidersHorizontal, X } from 'lucide-react'
 
 export default function ProductFilters({
@@ -7,12 +8,15 @@ export default function ProductFilters({
   setCategory,
   categories,
   onAddProduct,
-  canManageProducts=false,
+  canManageProducts = false,
 }) {
   return (
     <div className="product-filters">
+
+      {/* Product Search */}
       <div className="product-search">
         <Search size={18} />
+
         <input
           type="text"
           placeholder="Search by product name or SKU..."
@@ -32,15 +36,20 @@ export default function ProductFilters({
         )}
       </div>
 
+      {/* Filter Actions */}
       <div className="filter-actions">
+
+        {/* Category Filter */}
         <div className="category-filter">
           <SlidersHorizontal size={16} />
+
           <select
             value={category}
             onChange={(event) => setCategory(event.target.value)}
             aria-label="Filter by category"
           >
             <option value="All">All Categories</option>
+
             {categories.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -49,6 +58,7 @@ export default function ProductFilters({
           </select>
         </div>
 
+        {/* Add Product - Owner and Manager Only */}
         {canManageProducts && (
           <button
             type="button"
@@ -59,6 +69,7 @@ export default function ProductFilters({
             <span>Add Product</span>
           </button>
         )}
+
       </div>
     </div>
   )
