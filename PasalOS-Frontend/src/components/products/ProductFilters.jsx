@@ -7,6 +7,7 @@ export default function ProductFilters({
   setCategory,
   categories,
   onAddProduct,
+  canManageProducts=false,
 }) {
   return (
     <div className="product-filters">
@@ -48,14 +49,16 @@ export default function ProductFilters({
           </select>
         </div>
 
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={onAddProduct}
-        >
-          <Plus size={18} />
-          <span>Add Product</span>
-        </button>
+        {canManageProducts && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={onAddProduct}
+          >
+            <Plus size={18} />
+            <span>Add Product</span>
+          </button>
+        )}
       </div>
     </div>
   )
