@@ -1,5 +1,4 @@
 import { NavLink } from "react-router-dom";
-import { UserCog } from "lucide-react";
 import {
   LayoutDashboard,
   Package,
@@ -17,6 +16,7 @@ import {
   Store,
   X,
   History,
+  UserCog,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
