@@ -1,8 +1,15 @@
 
-import { createContext, useContext, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+} from 'react'
+
 import {
   loginUser,
   registerUser,
+  updateProfile as updateProfileService,
+  changePassword as changePasswordService,
   logoutUser,
 } from '../services/authService'
 
@@ -11,7 +18,9 @@ const AuthContext = createContext(null)
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('pasalos-user')) || null
+      return JSON.parse(
+        localStorage.getItem('pasalos-user')
+      ) || null
     } catch {
       return null
     }
@@ -47,6 +56,25 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Update profile and synchronize localStorage
+  const updateProfile = async (profileData) => {
+    const updatedUser = await updateProfileService(profileData)
+
+    setUser(updatedUser)
+
+    localStorage.setItem(
+      'pasalos-user',
+      JSON.stringify(updatedUser)
+    )
+
+    return updatedUser
+  }
+
+  // Change password
+  const changePassword = async (passwordData) => {
+    return await changePasswordService(passwordData)
+  }
+
   const logout = () => {
     logoutUser()
     setUser(null)
@@ -54,7 +82,16 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, isAuthenticated: !!user }}
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        updateProfile,
+        changePassword,
+        logout,
+        isAuthenticated: !!user,
+      }}
     >
       {children}
     </AuthContext.Provider>
@@ -65,7 +102,9 @@ export const useAuth = () => {
   const context = useContext(AuthContext)
 
   if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider')
+    throw new Error(
+      'useAuth must be used inside AuthProvider'
+    )
   }
 
   return context
