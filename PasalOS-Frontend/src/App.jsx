@@ -1,71 +1,64 @@
-
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Layout
-import DashboardLayout from './components/layout/DashboardLayout'
+import DashboardLayout from "./components/layout/DashboardLayout";
 
 // Authentication
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ProtectedRoute from './components/ProtectedRoute'
-import PermissionRoute from './components/PermissionRoute'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PermissionRoute from "./components/PermissionRoute";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Pages
-import Dashboard from './pages/Dashboard'
-import Products from './pages/Products'
-import Categories from './pages/Categories'
-import Inventory from './pages/Inventory'
-import StockMovementHistory from './pages/StockMovementHistory'
-import POS from './pages/POS'
-import Sales from './pages/Sales'
-import Customers from './pages/Customers'
-import Suppliers from './pages/Suppliers'
-import Purchases from './pages/Purchases'
-import Expenses from './pages/Expenses'
-import Reports from './pages/Reports'
-import Notifications from './pages/Notifications'
-import Settings from './pages/Settings'
-import Unauthorized from './pages/Unauthorized'
-import NotFound from './pages/NotFound'
-import Users from './pages/Users'
+import Dashboard from "./pages/Dashboard";
+import Products from "./pages/Products";
+import Categories from "./pages/Categories";
+import Inventory from "./pages/Inventory";
+import StockMovementHistory from "./pages/StockMovementHistory";
+import POS from "./pages/POS";
+import Sales from "./pages/Sales";
+import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
+import Purchases from "./pages/Purchases";
+import Expenses from "./pages/Expenses";
+import Reports from "./pages/Reports";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
+import Unauthorized from "./pages/Unauthorized";
+import NotFound from "./pages/NotFound";
+import Users from "./pages/Users";
 
 // Global state providers
-import { ProductsProvider } from './hooks/useProducts'
-import { StockMovementsProvider } from './hooks/useStockMovements'
-
+import { ProductsProvider } from "./hooks/useProducts";
+import { StockMovementsProvider } from "./hooks/useStockMovements";
 
 // Redirect authenticated users away from Login and Register
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
-    return children
+    return children;
   }
 
-  const redirectPath =
-    user?.role === 'cashier' ? '/pos' : '/'
+  const redirectPath = user?.role === "cashier" ? "/pos" : "/";
 
-  return <Navigate to={redirectPath} replace />
-}
-
+  return <Navigate to={redirectPath} replace />;
+};
 
 // Redirect authenticated users to their appropriate home page
 const HomeRedirect = () => {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
-  const homePath =
-    user?.role === 'cashier' ? '/pos' : '/'
+  const homePath = user?.role === "cashier" ? "/pos" : "/";
 
-  return <Navigate to={homePath} replace />
-}
-
+  return <Navigate to={homePath} replace />;
+};
 
 // Main application routes
 const AppRoutes = () => {
   return (
     <Routes>
-
       {/* ======================================
           PUBLIC ROUTES
       ====================================== */}
@@ -88,27 +81,18 @@ const AppRoutes = () => {
         }
       />
 
-
       {/* ======================================
           PROTECTED ROUTES
       ====================================== */}
 
       <Route element={<ProtectedRoute />}>
-
         {/* Unauthorized page */}
-        <Route
-          path="/unauthorized"
-          element={<Unauthorized />}
-        />
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Main dashboard layout */}
         <Route element={<DashboardLayout />}>
-
           {/* Home route */}
-          <Route
-            index
-            element={<HomeRedirect />}
-          />
+          <Route index element={<HomeRedirect />} />
 
           {/* Dashboard */}
           <Route
@@ -251,18 +235,21 @@ const AppRoutes = () => {
           />
 
           {/* Page not found */}
-          <Route
-            path="*"
-            element={<NotFound />}
-          />
-
+          <Route path="*" element={<NotFound />} />
         </Route>
+
+        <Route
+          path="users"
+          element={
+            <PermissionRoute module="users">
+              <Users />
+            </PermissionRoute>
+          }
+        />
       </Route>
-
     </Routes>
-  )
-}
-
+  );
+};
 
 // Root application
 export default function App() {
@@ -276,5 +263,5 @@ export default function App() {
         </ProductsProvider>
       </AuthProvider>
     </BrowserRouter>
-  )
+  );
 }
