@@ -2,41 +2,73 @@
 const pool = require('../config/db')
 const bcrypt = require('bcryptjs')
 
-// GET: All employees in the logged-in owner's shop
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Validate email format
+const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+// Validate employee ID
+const isValidUserId = (id) => {
+  return Number.isInteger(Number(id)) && Number(id) > 0
+}
+
+// ============================================
+// GET: ALL EMPLOYEES
+// ============================================
+
 const getUsers = async (req, res) => {
   try {
     const [users] = await pool.execute(
       `SELECT id, full_name, email, role, status, created_at
        FROM users
-       WHERE shop_id = ? AND role IN ('manager', 'cashier')
+       WHERE shop_id = ?
+       AND role IN ('manager', 'cashier')
        ORDER BY created_at DESC`,
       [req.shopId]
     )
 
-    res.json({
+    return res.status(200).json({
       success: true,
       count: users.length,
       data: users,
     })
   } catch (error) {
     console.error('Get users error:', error)
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       message: 'Failed to retrieve employees.',
     })
   }
 }
 
-// GET: Single employee
+// ============================================
+// GET: SINGLE EMPLOYEE
+// ============================================
+
 const getUserById = async (req, res) => {
   try {
+    const { id } = req.params
+
+    if (!isValidUserId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID.',
+      })
+    }
+
     const [users] = await pool.execute(
       `SELECT id, full_name, email, role, status, created_at
        FROM users
-       WHERE id = ? AND shop_id = ?
+       WHERE id = ?
+       AND shop_id = ?
        AND role IN ('manager', 'cashier')
        LIMIT 1`,
-      [req.params.id, req.shopId]
+      [Number(id), req.shopId]
     )
 
     if (users.length === 0) {
@@ -46,17 +78,24 @@ const getUserById = async (req, res) => {
       })
     }
 
-    res.json({ success: true, data: users[0] })
+    return res.status(200).json({
+      success: true,
+      data: users[0],
+    })
   } catch (error) {
     console.error('Get employee error:', error)
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       message: 'Failed to retrieve employee.',
     })
   }
 }
 
-// POST: Create employee
+// ============================================
+// POST: CREATE EMPLOYEE
+// ============================================
+
 const createUser = async (req, res) => {
   try {
     const { full_name, email, password, role } = req.body
@@ -68,8 +107,8 @@ const createUser = async (req, res) => {
       })
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase()
     const normalizedName = String(full_name).trim()
+    const normalizedEmail = String(email).trim().toLowerCase()
 
     if (!normalizedName || normalizedName.length > 150) {
       return res.status(400).json({
@@ -78,14 +117,18 @@ const createUser = async (req, res) => {
       })
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (!isValidEmail(normalizedEmail)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid email address.',
       })
     }
 
-    if (typeof password !== 'string' || password.length < 8 || password.length > 72) {
+    if (
+      typeof password !== 'string' ||
+      password.length < 8 ||
+      password.length > 72
+    ) {
       return res.status(400).json({
         success: false,
         message: 'Password must be between 8 and 72 characters.',
@@ -99,8 +142,12 @@ const createUser = async (req, res) => {
       })
     }
 
+    // Check duplicate email within the same shop
     const [existingUsers] = await pool.execute(
-      'SELECT id FROM users WHERE shop_id = ? AND email = ? LIMIT 1',
+      `SELECT id
+       FROM users
+       WHERE shop_id = ? AND email = ?
+       LIMIT 1`,
       [req.shopId, normalizedEmail]
     )
 
@@ -111,15 +158,23 @@ const createUser = async (req, res) => {
       })
     }
 
+    // Hash password before saving
     const passwordHash = await bcrypt.hash(password, 12)
 
     const [result] = await pool.execute(
-      `INSERT INTO users (shop_id, full_name, email, password_hash, role)
+      `INSERT INTO users
+       (shop_id, full_name, email, password_hash, role)
        VALUES (?, ?, ?, ?, ?)`,
-      [req.shopId, normalizedName, normalizedEmail, passwordHash, role]
+      [
+        req.shopId,
+        normalizedName,
+        normalizedEmail,
+        passwordHash,
+        role,
+      ]
     )
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Employee created successfully.',
       data: {
@@ -140,18 +195,28 @@ const createUser = async (req, res) => {
       })
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to create employee.',
     })
   }
 }
 
-// PUT: Update employee details
+// ============================================
+// PUT: UPDATE EMPLOYEE DETAILS
+// ============================================
+
 const updateUser = async (req, res) => {
   try {
+    const { id } = req.params
     const { full_name, email, role } = req.body
-    const userId = req.params.id
+
+    if (!isValidUserId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID.',
+      })
+    }
 
     if (!full_name || !email || !role) {
       return res.status(400).json({
@@ -170,7 +235,7 @@ const updateUser = async (req, res) => {
       })
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (!isValidEmail(normalizedEmail)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid email address.',
@@ -184,12 +249,15 @@ const updateUser = async (req, res) => {
       })
     }
 
+    // Verify employee belongs to owner's shop
     const [users] = await pool.execute(
-      `SELECT id FROM users
-       WHERE id = ? AND shop_id = ?
+      `SELECT id
+       FROM users
+       WHERE id = ?
+       AND shop_id = ?
        AND role IN ('manager', 'cashier')
        LIMIT 1`,
-      [userId, req.shopId]
+      [Number(id), req.shopId]
     )
 
     if (users.length === 0) {
@@ -199,11 +267,15 @@ const updateUser = async (req, res) => {
       })
     }
 
+    // Check duplicate email
     const [duplicates] = await pool.execute(
-      `SELECT id FROM users
-       WHERE shop_id = ? AND email = ? AND id != ?
+      `SELECT id
+       FROM users
+       WHERE shop_id = ?
+       AND email = ?
+       AND id != ?
        LIMIT 1`,
-      [req.shopId, normalizedEmail, userId]
+      [req.shopId, normalizedEmail, Number(id)]
     )
 
     if (duplicates.length > 0) {
@@ -217,27 +289,53 @@ const updateUser = async (req, res) => {
       `UPDATE users
        SET full_name = ?, email = ?, role = ?
        WHERE id = ? AND shop_id = ?`,
-      [normalizedName, normalizedEmail, role, userId, req.shopId]
+      [
+        normalizedName,
+        normalizedEmail,
+        role,
+        Number(id),
+        req.shopId,
+      ]
     )
 
-    res.json({
+    return res.status(200).json({
       success: true,
       message: 'Employee updated successfully.',
     })
   } catch (error) {
     console.error('Update employee error:', error)
-    res.status(500).json({
+
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({
+        success: false,
+        message: 'This email is already used by another user.',
+      })
+    }
+
+    return res.status(500).json({
       success: false,
       message: 'Failed to update employee.',
     })
   }
 }
 
-// PATCH: Deactivate or reactivate employee
+// ============================================
+// PATCH: ACTIVATE / DEACTIVATE EMPLOYEE
+// ============================================
+
 const updateUserStatus = async (req, res) => {
   try {
+    const { id } = req.params
     const { status } = req.body
-    const userId = Number(req.params.id)
+
+    if (!isValidUserId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID.',
+      })
+    }
+
+    const userId = Number(id)
 
     if (!['active', 'inactive'].includes(status)) {
       return res.status(400).json({
@@ -246,6 +344,7 @@ const updateUserStatus = async (req, res) => {
       })
     }
 
+    // Prevent owner from changing their own account status
     if (userId === Number(req.user.id)) {
       return res.status(400).json({
         success: false,
@@ -256,7 +355,8 @@ const updateUserStatus = async (req, res) => {
     const [result] = await pool.execute(
       `UPDATE users
        SET status = ?
-       WHERE id = ? AND shop_id = ?
+       WHERE id = ?
+       AND shop_id = ?
        AND role IN ('manager', 'cashier')`,
       [status, userId, req.shopId]
     )
@@ -268,18 +368,113 @@ const updateUserStatus = async (req, res) => {
       })
     }
 
-    res.json({
+    return res.status(200).json({
       success: true,
-      message: `Employee ${status === 'active' ? 'activated' : 'deactivated'} successfully.`,
+      message: `Employee ${
+        status === 'active' ? 'activated' : 'deactivated'
+      } successfully.`,
     })
   } catch (error) {
     console.error('Update employee status error:', error)
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       message: 'Failed to update employee status.',
     })
   }
 }
+
+// ============================================
+// PATCH: RESET EMPLOYEE PASSWORD
+// ============================================
+
+const resetUserPassword = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { new_password, confirm_password } = req.body
+
+    if (!isValidUserId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID.',
+      })
+    }
+
+    const userId = Number(id)
+
+    if (
+      typeof new_password !== 'string' ||
+      typeof confirm_password !== 'string' ||
+      !new_password ||
+      !confirm_password
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirmation are required.',
+      })
+    }
+
+    if (new_password.length < 8 || new_password.length > 72) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be between 8 and 72 characters.',
+      })
+    }
+
+    if (new_password !== confirm_password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passwords do not match.',
+      })
+    }
+
+    // Verify employee belongs to owner's shop
+    const [users] = await pool.execute(
+      `SELECT id
+       FROM users
+       WHERE id = ?
+       AND shop_id = ?
+       AND role IN ('manager', 'cashier')
+       LIMIT 1`,
+      [userId, req.shopId]
+    )
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found.',
+      })
+    }
+
+    // Hash the new password securely
+    const passwordHash = await bcrypt.hash(new_password, 12)
+
+    await pool.execute(
+      `UPDATE users
+       SET password_hash = ?
+       WHERE id = ?
+       AND shop_id = ?
+       AND role IN ('manager', 'cashier')`,
+      [passwordHash, userId, req.shopId]
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: 'Employee password reset successfully.',
+    })
+  } catch (error) {
+    console.error('Reset employee password error:', error)
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to reset employee password.',
+    })
+  }
+}
+
+// ============================================
+// EXPORT CONTROLLERS
+// ============================================
 
 module.exports = {
   getUsers,
@@ -287,4 +482,5 @@ module.exports = {
   createUser,
   updateUser,
   updateUserStatus,
+  resetUserPassword,
 }
