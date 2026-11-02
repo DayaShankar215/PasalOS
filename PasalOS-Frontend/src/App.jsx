@@ -28,6 +28,7 @@ import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
 import Unauthorized from './pages/Unauthorized'
 import NotFound from './pages/NotFound'
+import Users from './pages/Users'
 
 // Global state providers
 import { ProductsProvider } from './hooks/useProducts'
