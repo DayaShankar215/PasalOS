@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+
 import {
   Store,
   Save,
@@ -12,7 +13,16 @@ import {
   AlertCircle,
   Eye,
   Settings as SettingsIcon,
+  UserRound,
+  LockKeyhole,
+  ShieldCheck,
 } from "lucide-react";
+
+import { useAuth } from "../context/AuthContext";
+
+// ==========================================
+// SETTINGS CONFIGURATION
+// ==========================================
 
 const SETTINGS_STORAGE_KEY = "pasalos-settings";
 
@@ -34,11 +44,15 @@ const defaultSettings = {
   expenseNotifications: true,
 };
 
+// ==========================================
+// LOAD SETTINGS FROM LOCAL STORAGE
+// ==========================================
+
 const loadSettings = () => {
   try {
     const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
 
-    if (!saved) return defaultSettings;
+    if (!saved) return { ...defaultSettings };
 
     const parsed = JSON.parse(saved);
 
@@ -49,17 +63,50 @@ const loadSettings = () => {
         : {}),
     };
   } catch {
-    return defaultSettings;
+    return { ...defaultSettings };
   }
 };
 
+// ==========================================
+// SETTINGS SIDEBAR SECTIONS
+// ==========================================
+
 const sections = [
-  { id: "store", label: "Store Information", icon: Building2 },
-  { id: "tax", label: "Tax & Currency", icon: Receipt },
-  { id: "inventory", label: "Inventory", icon: Package },
-  { id: "invoice", label: "Invoice", icon: Receipt },
-  { id: "notifications", label: "Notifications", icon: Bell },
+  {
+    id: "store",
+    label: "Store Information",
+    icon: Building2,
+  },
+  {
+    id: "account",
+    label: "Account",
+    icon: UserRound,
+  },
+  {
+    id: "tax",
+    label: "Tax & Currency",
+    icon: Receipt,
+  },
+  {
+    id: "inventory",
+    label: "Inventory",
+    icon: Package,
+  },
+  {
+    id: "invoice",
+    label: "Invoice",
+    icon: Receipt,
+  },
+  {
+    id: "notifications",
+    label: "Notifications",
+    icon: Bell,
+  },
 ];
+
+// ==========================================
+// REUSABLE SETTINGS FIELD
+// ==========================================
 
 function SettingsField({
   label,
@@ -73,6 +120,8 @@ function SettingsField({
   max,
   step,
   help,
+  disabled = false,
+  autoComplete,
 }) {
   return (
     <div>
@@ -95,20 +144,40 @@ function SettingsField({
         min={min}
         max={max}
         step={step}
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        disabled={disabled}
+        autoComplete={autoComplete}
+        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-gray-100"
       />
 
-      {help && <p className="mt-1.5 text-xs text-gray-500">{help}</p>}
+      {help && (
+        <p className="mt-1.5 text-xs text-gray-500">
+          {help}
+        </p>
+      )}
     </div>
   );
 }
 
-function ToggleSetting({ title, description, checked, onChange }) {
+// ==========================================
+// REUSABLE TOGGLE SETTING
+// ==========================================
+
+function ToggleSetting({
+  title,
+  description,
+  checked,
+  onChange,
+}) {
   return (
     <div className="flex items-center justify-between gap-4 py-4">
       <div>
-        <h4 className="text-sm font-medium text-gray-900">{title}</h4>
-        <p className="mt-1 text-sm text-gray-500">{description}</p>
+        <h4 className="text-sm font-medium text-gray-900">
+          {title}
+        </h4>
+
+        <p className="mt-1 text-sm text-gray-500">
+          {description}
+        </p>
       </div>
 
       <button
@@ -130,19 +199,107 @@ function ToggleSetting({ title, description, checked, onChange }) {
   );
 }
 
+// ==========================================
+// FEEDBACK MESSAGE
+// ==========================================
+
+function FeedbackMessage({ feedback }) {
+  if (!feedback) return null;
+
+  const isSuccess = feedback.type === "success";
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`flex items-center gap-3 rounded-lg border p-4 ${
+        isSuccess
+          ? "border-green-200 bg-green-50 text-green-800"
+          : "border-red-200 bg-red-50 text-red-800"
+      }`}
+    >
+      {isSuccess ? (
+        <CheckCircle2 size={20} className="shrink-0" />
+      ) : (
+        <AlertCircle size={20} className="shrink-0" />
+      )}
+
+      <p className="text-sm font-medium">
+        {feedback.message}
+      </p>
+    </div>
+  );
+}
+
+// ==========================================
+// MAIN SETTINGS COMPONENT
+// ==========================================
+
 export default function Settings() {
+  // Authentication context
+  const {
+    user,
+    updateProfile,
+    changePassword,
+  } = useAuth();
+
+  // Store settings
   const [settings, setSettings] = useState(loadSettings);
+
+  // Navigation
   const [activeSection, setActiveSection] = useState("store");
+
+  // General feedback
   const [feedback, setFeedback] = useState(null);
+
+  // Invoice preview
   const [showPreview, setShowPreview] = useState(false);
+
+  // Account profile
+  const [profileForm, setProfileForm] = useState({
+    full_name: user?.full_name || "",
+    email: user?.email || "",
+  });
+
+  // Password form
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
+
+  // Independent loading states
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // ========================================
+  // SYNC PROFILE WITH AUTH CONTEXT
+  // ========================================
+
+  useEffect(() => {
+    setProfileForm({
+      full_name: user?.full_name || "",
+      email: user?.email || "",
+    });
+  }, [user]);
+
+  // ========================================
+  // CLEAR FEEDBACK AUTOMATICALLY
+  // ========================================
 
   useEffect(() => {
     if (!feedback) return undefined;
 
-    const timer = setTimeout(() => setFeedback(null), 3500);
+    const timer = setTimeout(() => {
+      setFeedback(null);
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, [feedback]);
+
+  // ========================================
+  // STORE SETTINGS HANDLERS
+  // ========================================
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -167,6 +324,10 @@ export default function Settings() {
     }));
   };
 
+  // ========================================
+  // SAVE STORE SETTINGS
+  // ========================================
+
   const saveSettings = (event) => {
     event.preventDefault();
 
@@ -175,6 +336,7 @@ export default function Settings() {
         type: "error",
         message: "Please enter a store name.",
       });
+
       setActiveSection("store");
       return;
     }
@@ -189,6 +351,7 @@ export default function Settings() {
         type: "error",
         message: "VAT must be between 0 and 100.",
       });
+
       setActiveSection("tax");
       return;
     }
@@ -202,6 +365,7 @@ export default function Settings() {
         type: "error",
         message: "The low-stock threshold cannot be negative or empty.",
       });
+
       setActiveSection("inventory");
       return;
     }
@@ -211,21 +375,26 @@ export default function Settings() {
         type: "error",
         message: "Please enter an invoice prefix.",
       });
+
       setActiveSection("invoice");
       return;
     }
 
     try {
+      const updatedSettings = {
+        ...settings,
+        storeName: settings.storeName.trim(),
+        invoicePrefix: settings.invoicePrefix.trim(),
+        vatRate: Number(settings.vatRate),
+        lowStockThreshold: Number(settings.lowStockThreshold),
+      };
+
       localStorage.setItem(
         SETTINGS_STORAGE_KEY,
-        JSON.stringify({
-          ...settings,
-          storeName: settings.storeName.trim(),
-          invoicePrefix: settings.invoicePrefix.trim(),
-          vatRate: Number(settings.vatRate),
-          lowStockThreshold: Number(settings.lowStockThreshold),
-        })
+        JSON.stringify(updatedSettings)
       );
+
+      setSettings(updatedSettings);
 
       setFeedback({
         type: "success",
@@ -239,14 +408,16 @@ export default function Settings() {
     }
   };
 
+  // ========================================
+  // RESET STORE SETTINGS
+  // ========================================
+
   const resetSettings = () => {
     const confirmed = window.confirm(
-      "Reset all settings to their default values? Your saved preferences will be replaced."
+      "Reset all store preferences to their default values? Your saved preferences will be replaced. Account information will not be changed."
     );
 
     if (!confirmed) return;
-
-    setSettings({ ...defaultSettings });
 
     try {
       localStorage.setItem(
@@ -254,9 +425,12 @@ export default function Settings() {
         JSON.stringify(defaultSettings)
       );
 
+      setSettings({ ...defaultSettings });
+      setShowPreview(false);
+
       setFeedback({
         type: "success",
-        message: "Settings have been reset to defaults.",
+        message: "Store settings have been reset to defaults.",
       });
     } catch {
       setFeedback({
@@ -266,35 +440,220 @@ export default function Settings() {
     }
   };
 
-  const money = (amount) =>
-    new Intl.NumberFormat("en-NP", {
-      style: "currency",
-      currency: settings.currency || "NPR",
-      maximumFractionDigits: 2,
-    }).format(Number(amount) || 0);
+  // ========================================
+  // PROFILE FORM HANDLERS
+  // ========================================
+
+  const handleProfileChange = (event) => {
+    const { name, value } = event.target;
+
+    setProfileForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
+
+  const handleProfileSubmit = async (event) => {
+    event.preventDefault();
+
+    const fullName = profileForm.full_name.trim();
+    const email = profileForm.email.trim().toLowerCase();
+
+    if (!fullName || !email) {
+      setFeedback({
+        type: "error",
+        message: "Please enter your full name and email address.",
+      });
+      return;
+    }
+
+    if (fullName.length > 150) {
+      setFeedback({
+        type: "error",
+        message: "Your name cannot exceed 150 characters.",
+      });
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      setFeedback({
+        type: "error",
+        message: "Please enter a valid email address.",
+      });
+      return;
+    }
+
+    setProfileLoading(true);
+
+    try {
+      await updateProfile({
+        full_name: fullName,
+        email,
+      });
+
+      setFeedback({
+        type: "success",
+        message: "Your profile has been updated successfully!",
+      });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message:
+          error.response?.data?.message ||
+          "Unable to update your profile. Please try again.",
+      });
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  // ========================================
+  // PASSWORD FORM HANDLERS
+  // ========================================
+
+  const handlePasswordChange = (event) => {
+    const { name, value } = event.target;
+
+    setPasswordForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
+
+  const handlePasswordSubmit = async (event) => {
+    event.preventDefault();
+
+    const {
+      current_password,
+      new_password,
+      confirm_password,
+    } = passwordForm;
+
+    if (!current_password || !new_password || !confirm_password) {
+      setFeedback({
+        type: "error",
+        message: "Please fill in all password fields.",
+      });
+      return;
+    }
+
+    if (new_password.length < 8) {
+      setFeedback({
+        type: "error",
+        message: "New password must contain at least 8 characters.",
+      });
+      return;
+    }
+
+    if (new_password.length > 72) {
+      setFeedback({
+        type: "error",
+        message: "New password cannot exceed 72 characters.",
+      });
+      return;
+    }
+
+    if (new_password !== confirm_password) {
+      setFeedback({
+        type: "error",
+        message: "New password and confirmation do not match.",
+      });
+      return;
+    }
+
+    if (new_password === current_password) {
+      setFeedback({
+        type: "error",
+        message: "Your new password must be different from your current password.",
+      });
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      const response = await changePassword({
+        current_password,
+        new_password,
+        confirm_password,
+      });
+
+      setPasswordForm({
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
+
+      setFeedback({
+        type: "success",
+        message:
+          response?.message || "Password changed successfully.",
+      });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message:
+          error.response?.data?.message ||
+          "Unable to change password. Please check your current password.",
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  // ========================================
+  // CURRENCY FORMATTER
+  // ========================================
+
+  const money = (amount) => {
+    try {
+      return new Intl.NumberFormat("en-NP", {
+        style: "currency",
+        currency: settings.currency || "NPR",
+        maximumFractionDigits: 2,
+      }).format(Number(amount) || 0);
+    } catch {
+      return `NPR ${(Number(amount) || 0).toFixed(2)}`;
+    }
+  };
+
+  // ========================================
+  // RENDER
+  // ========================================
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* Page heading */}
+
+      {/* ================================== */}
+      {/* PAGE HEADING */}
+      {/* ================================== */}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-indigo-100 p-3 text-indigo-700">
             <SettingsIcon size={25} />
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Settings
+            </h1>
+
             <p className="mt-1 text-sm text-gray-500">
-              Manage your store preferences and business configuration.
+              Manage your account, store preferences, and business configuration.
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
+
           <button
             type="button"
             onClick={resetSettings}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
           >
             <RotateCcw size={16} />
             Reset defaults
@@ -303,40 +662,39 @@ export default function Settings() {
           <button
             type="submit"
             form="pasalos-settings-form"
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
           >
             <Save size={16} />
             Save settings
           </button>
+
         </div>
       </div>
 
-      {/* Feedback */}
-      {feedback && (
-        <div
-          role="status"
-          className={`flex items-center gap-3 rounded-lg border p-4 ${
-            feedback.type === "success"
-              ? "border-green-200 bg-green-50 text-green-800"
-              : "border-red-200 bg-red-50 text-red-800"
-          }`}
-        >
-          {feedback.type === "success" ? (
-            <CheckCircle2 size={20} />
-          ) : (
-            <AlertCircle size={20} />
-          )}
+      {/* ================================== */}
+      {/* FEEDBACK */}
+      {/* ================================== */}
 
-          <p className="text-sm font-medium">{feedback.message}</p>
-        </div>
-      )}
+      <FeedbackMessage feedback={feedback} />
 
-      <form id="pasalos-settings-form" onSubmit={saveSettings}>
+      {/* ================================== */}
+      {/* SETTINGS FORM */}
+      {/* ================================== */}
+
+      <form
+        id="pasalos-settings-form"
+        onSubmit={saveSettings}
+      >
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-4">
-          {/* Sidebar */}
+
+          {/* ================================== */}
+          {/* SIDEBAR */}
+          {/* ================================== */}
+
           <aside className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+
             <p className="px-3 pb-3 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Preferences
+              Settings Menu
             </p>
 
             <nav className="space-y-1">
@@ -349,6 +707,7 @@ export default function Settings() {
                     key={section.id}
                     type="button"
                     onClick={() => setActiveSection(section.id)}
+                    aria-current={isActive ? "page" : undefined}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium transition ${
                       isActive
                         ? "bg-indigo-50 text-indigo-700"
@@ -363,11 +722,222 @@ export default function Settings() {
             </nav>
           </aside>
 
-          {/* Main content */}
+          {/* ================================== */}
+          {/* MAIN CONTENT */}
+          {/* ================================== */}
+
           <div className="space-y-6 lg:col-span-3">
+
+            {/* ================================== */}
+            {/* ACCOUNT SECTION */}
+            {/* ================================== */}
+
+            {activeSection === "account" && (
+              <div className="space-y-6">
+
+                {/* PROFILE INFORMATION */}
+
+                <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+
+                  <div className="flex items-center gap-3 border-b border-gray-200 p-5">
+
+                    <div className="rounded-lg bg-indigo-100 p-2 text-indigo-700">
+                      <UserRound size={21} />
+                    </div>
+
+                    <div>
+                      <h2 className="font-semibold text-gray-900">
+                        Profile Information
+                      </h2>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        Manage your personal account information.
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <div className="space-y-5 p-5">
+
+                    <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-4">
+
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xl font-bold text-white">
+                        {(user?.full_name || "U")
+                          .trim()
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+
+                      <div className="min-w-0">
+                        <h3 className="truncate font-semibold text-gray-900">
+                          {user?.full_name || "User"}
+                        </h3>
+
+                        <p className="truncate text-sm text-gray-500">
+                          {user?.email || "No email available"}
+                        </p>
+
+                        <span className="mt-1 inline-flex rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium capitalize text-indigo-700">
+                          {user?.role || "User"}
+                        </span>
+                      </div>
+
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+                      <SettingsField
+                        label="Full name"
+                        name="full_name"
+                        value={profileForm.full_name}
+                        onChange={handleProfileChange}
+                        placeholder="Enter your full name"
+                        required
+                        autoComplete="name"
+                      />
+
+                      <SettingsField
+                        label="Email address"
+                        name="email"
+                        type="email"
+                        value={profileForm.email}
+                        onChange={handleProfileChange}
+                        placeholder="Enter your email"
+                        required
+                        autoComplete="email"
+                      />
+
+                    </div>
+
+                    <div className="rounded-lg bg-blue-50 p-4 text-sm leading-6 text-blue-800">
+                      Your account information is saved to the PasalOS backend.
+                      Updating your profile also synchronizes the information
+                      displayed in your Topbar.
+                    </div>
+
+                    <div className="flex justify-end">
+
+                      <button
+                        type="button"
+                        onClick={handleProfileSubmit}
+                        disabled={profileLoading || passwordLoading}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Save size={16} />
+
+                        {profileLoading
+                          ? "Updating profile..."
+                          : "Update Profile"}
+                      </button>
+
+                    </div>
+
+                  </div>
+                </section>
+
+                {/* CHANGE PASSWORD */}
+
+                <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+
+                  <div className="flex items-center gap-3 border-b border-gray-200 p-5">
+
+                    <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
+                      <LockKeyhole size={21} />
+                    </div>
+
+                    <div>
+                      <h2 className="font-semibold text-gray-900">
+                        Change Password
+                      </h2>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        Update your account password securely.
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <div className="space-y-5 p-5">
+
+                    <SettingsField
+                      label="Current password"
+                      name="current_password"
+                      type="password"
+                      value={passwordForm.current_password}
+                      onChange={handlePasswordChange}
+                      placeholder="Enter current password"
+                      required
+                      autoComplete="current-password"
+                    />
+
+                    <SettingsField
+                      label="New password"
+                      name="new_password"
+                      type="password"
+                      value={passwordForm.new_password}
+                      onChange={handlePasswordChange}
+                      placeholder="Enter new password"
+                      required
+                      min="8"
+                      max="72"
+                      autoComplete="new-password"
+                      help="Use at least 8 characters. Maximum 72 characters."
+                    />
+
+                    <SettingsField
+                      label="Confirm new password"
+                      name="confirm_password"
+                      type="password"
+                      value={passwordForm.confirm_password}
+                      onChange={handlePasswordChange}
+                      placeholder="Confirm your new password"
+                      required
+                      autoComplete="new-password"
+                    />
+
+                    <div className="rounded-lg bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+                      <div className="flex items-start gap-2">
+                        <ShieldCheck size={19} className="mt-0.5 shrink-0" />
+
+                        <p>
+                          Never share your password with anyone. Choose a
+                          strong password that you do not use on other websites.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+
+                      <button
+                        type="button"
+                        onClick={handlePasswordSubmit}
+                        disabled={passwordLoading || profileLoading}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <LockKeyhole size={16} />
+
+                        {passwordLoading
+                          ? "Changing password..."
+                          : "Change Password"}
+                      </button>
+
+                    </div>
+
+                  </div>
+                </section>
+
+              </div>
+            )}
+
+            {/* ================================== */}
+            {/* STORE INFORMATION */}
+            {/* ================================== */}
+
             {activeSection === "store" && (
               <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+
                 <div className="flex items-center gap-3 border-b border-gray-200 p-5">
+
                   <div className="rounded-lg bg-blue-100 p-2 text-blue-700">
                     <Store size={21} />
                   </div>
@@ -376,13 +946,16 @@ export default function Settings() {
                     <h2 className="font-semibold text-gray-900">
                       Store Information
                     </h2>
+
                     <p className="mt-1 text-sm text-gray-500">
                       Basic details about your business.
                     </p>
                   </div>
+
                 </div>
 
                 <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2">
+
                   <SettingsField
                     label="Store name"
                     name="storeName"
@@ -419,6 +992,7 @@ export default function Settings() {
                   />
 
                   <div className="sm:col-span-2">
+
                     <label
                       htmlFor="address"
                       className="mb-2 block text-sm font-medium text-gray-700"
@@ -435,25 +1009,37 @@ export default function Settings() {
                       placeholder="Enter your store address"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                     />
+
                   </div>
+
                 </div>
               </section>
             )}
 
+            {/* ================================== */}
+            {/* TAX AND CURRENCY */}
+            {/* ================================== */}
+
             {activeSection === "tax" && (
               <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+
                 <div className="border-b border-gray-200 p-5">
+
                   <h2 className="font-semibold text-gray-900">
                     Tax & Currency
                   </h2>
+
                   <p className="mt-1 text-sm text-gray-500">
                     Configure how monetary values are displayed and how VAT
                     preferences are stored.
                   </p>
+
                 </div>
 
                 <div className="space-y-5 p-5">
+
                   <div>
+
                     <label
                       htmlFor="currency"
                       className="mb-2 block text-sm font-medium text-gray-700"
@@ -468,13 +1054,23 @@ export default function Settings() {
                       onChange={handleChange}
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                     >
-                      <option value="NPR">Nepalese Rupee (NPR)</option>
-                      <option value="INR">Indian Rupee (INR)</option>
-                      <option value="USD">US Dollar (USD)</option>
+                      <option value="NPR">
+                        Nepalese Rupee (NPR)
+                      </option>
+
+                      <option value="INR">
+                        Indian Rupee (INR)
+                      </option>
+
+                      <option value="USD">
+                        US Dollar (USD)
+                      </option>
                     </select>
+
                   </div>
 
                   <div className="rounded-lg border border-gray-200 p-4">
+
                     <ToggleSetting
                       title="Enable VAT"
                       description="Store whether VAT should be enabled for your business."
@@ -485,6 +1081,7 @@ export default function Settings() {
                     />
 
                     <div className="border-t border-gray-100 pt-4">
+
                       <SettingsField
                         label="VAT percentage"
                         name="vatRate"
@@ -496,23 +1093,34 @@ export default function Settings() {
                         step="0.1"
                         help="Default is 13%. This setting does not yet change POS calculations."
                       />
+
                     </div>
+
                   </div>
 
                   <div className="rounded-lg bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+
                     <strong>Important:</strong> These are application
                     preferences, not tax or accounting advice. Confirm the
                     applicable tax treatment for your business. VAT settings
                     will need to be connected to the POS and invoice logic
                     separately.
+
                   </div>
+
                 </div>
               </section>
             )}
 
+            {/* ================================== */}
+            {/* INVENTORY SETTINGS */}
+            {/* ================================== */}
+
             {activeSection === "inventory" && (
               <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+
                 <div className="flex items-center gap-3 border-b border-gray-200 p-5">
+
                   <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
                     <Package size={21} />
                   </div>
@@ -521,13 +1129,16 @@ export default function Settings() {
                     <h2 className="font-semibold text-gray-900">
                       Inventory Settings
                     </h2>
+
                     <p className="mt-1 text-sm text-gray-500">
                       Configure the default stock alert threshold.
                     </p>
                   </div>
+
                 </div>
 
                 <div className="space-y-5 p-5">
+
                   <SettingsField
                     label="Default low-stock threshold"
                     name="lowStockThreshold"
@@ -540,21 +1151,31 @@ export default function Settings() {
                   />
 
                   <div className="rounded-lg bg-blue-50 p-4 text-sm leading-6 text-blue-800">
+
                     <strong>Current preference:</strong> Alert when stock is at
                     or below {settings.lowStockThreshold || 0} units.
+
                     <p className="mt-1">
                       This preference is saved here. Your existing inventory
                       and notification modules still use their current
                       thresholds until we connect them to this setting.
                     </p>
+
                   </div>
+
                 </div>
               </section>
             )}
 
+            {/* ================================== */}
+            {/* INVOICE SETTINGS */}
+            {/* ================================== */}
+
             {activeSection === "invoice" && (
               <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+
                 <div className="flex items-center gap-3 border-b border-gray-200 p-5">
+
                   <div className="rounded-lg bg-green-100 p-2 text-green-700">
                     <Receipt size={21} />
                   </div>
@@ -563,13 +1184,16 @@ export default function Settings() {
                     <h2 className="font-semibold text-gray-900">
                       Invoice Settings
                     </h2>
+
                     <p className="mt-1 text-sm text-gray-500">
                       Customize basic receipt information.
                     </p>
                   </div>
+
                 </div>
 
                 <div className="space-y-5 p-5">
+
                   <SettingsField
                     label="Invoice prefix"
                     name="invoicePrefix"
@@ -581,6 +1205,7 @@ export default function Settings() {
                   />
 
                   <div>
+
                     <label
                       htmlFor="invoiceFooter"
                       className="mb-2 block text-sm font-medium text-gray-700"
@@ -597,20 +1222,28 @@ export default function Settings() {
                       placeholder="Thank you for shopping with us!"
                       className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                     />
+
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => setShowPreview((previous) => !previous)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+                    onClick={() =>
+                      setShowPreview((previous) => !previous)
+                    }
+                    className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50"
                   >
                     <Eye size={17} />
-                    {showPreview ? "Hide preview" : "Preview invoice details"}
+
+                    {showPreview
+                      ? "Hide preview"
+                      : "Preview invoice details"}
                   </button>
 
                   {showPreview && (
                     <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-5">
+
                       <div className="text-center">
+
                         <h3 className="text-xl font-bold text-gray-900">
                           {settings.storeName || "My Pasal"}
                         </h3>
@@ -653,16 +1286,24 @@ export default function Settings() {
                           {settings.invoiceFooter ||
                             "Thank you for shopping with us!"}
                         </p>
+
                       </div>
                     </div>
                   )}
+
                 </div>
               </section>
             )}
 
+            {/* ================================== */}
+            {/* NOTIFICATION SETTINGS */}
+            {/* ================================== */}
+
             {activeSection === "notifications" && (
               <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+
                 <div className="flex items-center gap-3 border-b border-gray-200 p-5">
+
                   <div className="rounded-lg bg-purple-100 p-2 text-purple-700">
                     <Bell size={21} />
                   </div>
@@ -671,13 +1312,16 @@ export default function Settings() {
                     <h2 className="font-semibold text-gray-900">
                       Notification Preferences
                     </h2>
+
                     <p className="mt-1 text-sm text-gray-500">
                       Choose which notification types you prefer to receive.
                     </p>
                   </div>
+
                 </div>
 
                 <div className="divide-y divide-gray-100 px-5">
+
                   <ToggleSetting
                     title="Low-stock alerts"
                     description="Receive alerts when products are running low."
@@ -713,40 +1357,57 @@ export default function Settings() {
                       updateSetting("expenseNotifications", value)
                     }
                   />
+
                 </div>
 
                 <div className="border-t border-gray-200 p-5">
+
                   <p className="text-xs leading-5 text-gray-500">
                     These preferences are saved locally. They will affect the
                     actual notification list after we connect the notification
                     module to these settings.
                   </p>
+
                 </div>
               </section>
             )}
 
-            {/* Footer actions */}
-            <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-gray-500">
-                Remember to save your changes before leaving this page.
-              </p>
+            {/* ================================== */}
+            {/* FOOTER ACTIONS */}
+            {/* ================================== */}
 
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-              >
-                <Save size={16} />
-                Save settings
-              </button>
-            </div>
+            {activeSection !== "account" && (
+              <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+
+                <p className="text-sm text-gray-500">
+                  Remember to save your changes before leaving this page.
+                </p>
+
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
+                >
+                  <Save size={16} />
+                  Save settings
+                </button>
+
+              </div>
+            )}
+
           </div>
         </div>
       </form>
 
+      {/* ================================== */}
+      {/* PAGE FOOTER */}
+      {/* ================================== */}
+
       <p className="text-xs leading-5 text-gray-500">
-        Settings are currently stored in this browser using localStorage.
-        Backend synchronization will be added in a later development phase.
+        Account profile and password changes are managed through the backend.
+        Store preferences, tax, inventory, invoice, and notification settings
+        are currently stored in this browser using localStorage.
       </p>
+
     </div>
   );
 }
