@@ -1,5 +1,5 @@
-
-import { NavLink } from 'react-router-dom'
+import { NavLink } from "react-router-dom";
+import { UserCog } from "lucide-react";
 import {
   LayoutDashboard,
   Package,
@@ -17,34 +17,60 @@ import {
   Store,
   X,
   History,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { useAuth } from '../../context/AuthContext'
-import { hasPermission } from '../../utils/permissions'
+import { useAuth } from "../../context/AuthContext";
+import { hasPermission } from "../../utils/permissions";
 
 const menuItems = [
-  { label: 'Dashboard', path: '/', icon: LayoutDashboard, module: 'dashboard' },
-  { label: 'Products', path: '/products', icon: Package, module: 'products' },
-  { label: 'Categories', path: '/categories', icon: Tags, module: 'categories' },
-  { label: 'Inventory', path: '/inventory', icon: Boxes, module: 'inventory' },
-  { label: 'Point of Sale', path: '/pos', icon: ShoppingCart, module: 'pos' },
-  { label: 'Sales', path: '/sales', icon: Receipt, module: 'sales' },
-  { label: 'Customers', path: '/customers', icon: Users, module: 'customers' },
-  { label: 'Suppliers', path: '/suppliers', icon: Truck, module: 'suppliers' },
-  { label: 'Purchases', path: '/purchases', icon: ShoppingBag, module: 'purchases' },
-  { label: 'Expenses', path: '/expenses', icon: Wallet, module: 'expenses' },
-  { label: 'Reports', path: '/reports', icon: BarChart3, module: 'reports' },
-  { label: 'Notifications', path: '/notifications', icon: Bell, module: 'notifications' },
-  { label: 'Settings', path: '/settings', icon: Settings, module: 'settings' },
-  { label: 'Stock History', path: '/stock-history', icon: History, module: 'stockHistory' },
-]
+  { label: "Dashboard", path: "/", icon: LayoutDashboard, module: "dashboard" },
+  { label: "Products", path: "/products", icon: Package, module: "products" },
+  {
+    label: "Categories",
+    path: "/categories",
+    icon: Tags,
+    module: "categories",
+  },
+  { label: "Inventory", path: "/inventory", icon: Boxes, module: "inventory" },
+  { label: "Point of Sale", path: "/pos", icon: ShoppingCart, module: "pos" },
+  { label: "Sales", path: "/sales", icon: Receipt, module: "sales" },
+  { label: "Customers", path: "/customers", icon: Users, module: "customers" },
+  { label: "Suppliers", path: "/suppliers", icon: Truck, module: "suppliers" },
+  {
+    label: "Purchases",
+    path: "/purchases",
+    icon: ShoppingBag,
+    module: "purchases",
+  },
+  { label: "Expenses", path: "/expenses", icon: Wallet, module: "expenses" },
+  { label: "Reports", path: "/reports", icon: BarChart3, module: "reports" },
+  {
+    label: "Notifications",
+    path: "/notifications",
+    icon: Bell,
+    module: "notifications",
+  },
+  { label: "Settings", path: "/settings", icon: Settings, module: "settings" },
+  {
+    label: "User Management",
+    path: "/users",
+    icon: UserCog,
+    module: "users",
+  },
+  {
+    label: "Stock History",
+    path: "/stock-history",
+    icon: History,
+    module: "stockHistory",
+  },
+];
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   const visibleMenuItems = menuItems.filter(({ module }) =>
-    hasPermission(user?.role, module, 'view')
-  )
+    hasPermission(user?.role, module, "view"),
+  );
 
   return (
     <>
@@ -57,7 +83,7 @@ export default function Sidebar({ isOpen, onClose }) {
         />
       )}
 
-      <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
+      <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-brand">
           <div className="brand-icon">
             <Store size={24} />
@@ -85,16 +111,16 @@ export default function Sidebar({ isOpen, onClose }) {
             <NavLink
               key={path}
               to={path}
-              end={path === '/'}
+              end={path === "/"}
               onClick={onClose}
               className={({ isActive }) =>
-                `nav-link ${isActive ? 'nav-link-active' : ''}`
+                `nav-link ${isActive ? "nav-link-active" : ""}`
               }
             >
               <Icon size={19} strokeWidth={1.8} />
               <span>{label}</span>
 
-              {label === 'Notifications' && (
+              {label === "Notifications" && (
                 <span className="notification-count">3</span>
               )}
             </NavLink>
@@ -108,10 +134,14 @@ export default function Sidebar({ isOpen, onClose }) {
 
           <div>
             <strong>PasalOS Starter</strong>
-            <p>{user?.role ? `${user.role.charAt(0).toUpperCase()}${user.role.slice(1)} Account` : 'Business dashboard'}</p>
+            <p>
+              {user?.role
+                ? `${user.role.charAt(0).toUpperCase()}${user.role.slice(1)} Account`
+                : "Business dashboard"}
+            </p>
           </div>
         </div>
       </aside>
     </>
-  )
+  );
 }
