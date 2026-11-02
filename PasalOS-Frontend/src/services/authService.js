@@ -26,6 +26,23 @@ export const registerUser = async (userData) => {
   return { token, user, shop }
 }
 
+// Update logged-in user's profile
+export const updateProfile = async (profileData) => {
+  const response = await api.put('/auth/profile', profileData)
+
+  return response.data.data.user
+}
+
+// Change logged-in user's password
+export const changePassword = async (passwordData) => {
+  const response = await api.patch(
+    '/auth/change-password',
+    passwordData
+  )
+
+  return response.data
+}
+
 export const logoutUser = () => {
   localStorage.removeItem('pasalos-token')
   localStorage.removeItem('pasalos-user')
