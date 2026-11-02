@@ -50,14 +50,6 @@ export default function DashboardLayout() {
           >
             Logout {user?.full_name ? `(${user.full_name})` : ''}
           </button>
-          <Route
-  path="users"
-  element={
-    <PermissionRoute module="users">
-      <Users />
-    </PermissionRoute>
-  }
-/>
         </footer>
       </div>
     </div>
