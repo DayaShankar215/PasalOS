@@ -28,6 +28,11 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('pasalos-token')
+      localStorage.removeItem('pasalos-user')
+      localStorage.removeItem('pasalos-shop')
+
+      // Notify AuthContext that authentication has expired
+      window.dispatchEvent(new Event('pasalos-session-expired'))
     }
 
     return Promise.reject(error)
