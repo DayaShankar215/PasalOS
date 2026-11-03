@@ -1,5 +1,10 @@
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom'
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout'
@@ -35,29 +40,39 @@ import { ProductsProvider } from './hooks/useProducts'
 import { StockMovementsProvider } from './hooks/useStockMovements'
 
 
-// Redirect authenticated users away from Login and Register
-const PublicRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuth()
-
-  if (!isAuthenticated) {
-    return children
-  }
-
-  const redirectPath =
-    user?.role === 'cashier' ? '/pos' : '/'
-
-  return <Navigate to={redirectPath} replace />
+// Determine the correct home page for each role.
+const getHomePath = (role) => {
+  return role === 'cashier' ? '/pos' : '/dashboard'
 }
 
 
-// Redirect authenticated users to their appropriate home page
+// Redirect authenticated users away from public pages.
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuth()
+
+  if (isAuthenticated) {
+    return (
+      <Navigate
+        to={getHomePath(user?.role)}
+        replace
+      />
+    )
+  }
+
+  return children
+}
+
+
+// Redirect users from the root URL to their home page.
 const HomeRedirect = () => {
   const { user } = useAuth()
 
-  const homePath =
-    user?.role === 'cashier' ? '/pos' : '/'
-
-  return <Navigate to={homePath} replace />
+  return (
+    <Navigate
+      to={getHomePath(user?.role)}
+      replace
+    />
+  )
 }
 
 
@@ -66,9 +81,7 @@ const AppRoutes = () => {
   return (
     <Routes>
 
-      {/* ======================================
-          PUBLIC ROUTES
-      ====================================== */}
+      {/* Public routes */}
 
       <Route
         path="/login"
@@ -89,9 +102,7 @@ const AppRoutes = () => {
       />
 
 
-      {/* ======================================
-          PROTECTED ROUTES
-      ====================================== */}
+      {/* Protected routes */}
 
       <Route element={<ProtectedRoute />}>
 
@@ -104,7 +115,7 @@ const AppRoutes = () => {
         {/* Main dashboard layout */}
         <Route element={<DashboardLayout />}>
 
-          {/* Home route */}
+          {/* Root redirect */}
           <Route
             index
             element={<HomeRedirect />}
@@ -180,15 +191,15 @@ const AppRoutes = () => {
             }
           />
 
-           {/* User Management — IMPORTANT: inside DashboardLayout */}
-    <Route
-      path="users"
-      element={
-        <PermissionRoute module="users">
-          <Users />
-        </PermissionRoute>
-      }
-    />
+          {/* User Management - Owner only through permissions */}
+          <Route
+            path="users"
+            element={
+              <PermissionRoute module="users">
+                <Users />
+              </PermissionRoute>
+            }
+          />
 
           {/* Customers */}
           <Route
@@ -260,7 +271,7 @@ const AppRoutes = () => {
             }
           />
 
-          {/* Page not found */}
+          {/* Unknown routes inside dashboard */}
           <Route
             path="*"
             element={<NotFound />}
