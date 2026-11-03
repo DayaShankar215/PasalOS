@@ -19,17 +19,26 @@ const userService = {
     return response.data
   },
 
-  // Update employee
+  // Update employee details
   updateUser: async (id, userData) => {
     const response = await api.put(`/users/${id}`, userData)
     return response.data
   },
 
-  // Activate / deactivate employee
+  // Activate or deactivate employee
   updateUserStatus: async (id, status) => {
     const response = await api.patch(`/users/${id}/status`, {
       status,
     })
+    return response.data
+  },
+
+  // Reset employee password
+  resetUserPassword: async (id, passwordData) => {
+    const response = await api.patch(
+      `/users/${id}/password`,
+      passwordData
+    )
     return response.data
   },
 }

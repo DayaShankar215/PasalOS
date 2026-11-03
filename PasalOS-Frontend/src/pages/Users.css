@@ -1,7 +1,25 @@
+/* ================================
+   PAGE
+================================ */
+
 .users-page {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0;
   color: var(--text-primary, #1f2937);
 }
+
+.users-page *,
+.users-page *::before,
+.users-page *::after {
+  box-sizing: border-box;
+}
+
+/* ================================
+   PAGE HEADER
+================================ */
 
 .users-page-header {
   display: flex;
@@ -35,6 +53,10 @@
   gap: 10px;
 }
 
+/* ================================
+   BUTTONS
+================================ */
+
 .users-primary-button,
 .users-refresh-button,
 .users-cancel-button {
@@ -59,6 +81,7 @@
 
 .users-primary-button:hover {
   background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 
 .users-primary-button:disabled {
@@ -77,6 +100,16 @@
 .users-cancel-button:hover {
   background: #f8fafc;
 }
+
+.users-refresh-button:disabled,
+.users-cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================================
+   STATISTICS
+================================ */
 
 .users-stats-grid {
   display: grid;
@@ -123,6 +156,10 @@
   font-size: 11px;
 }
 
+/* ================================
+   CONTENT CARD
+================================ */
+
 .users-content-card {
   background: white;
   border: 1px solid #e9edf2;
@@ -152,6 +189,10 @@
   font-weight: 600;
 }
 
+/* ================================
+   SEARCH AND FILTERS
+================================ */
+
 .users-filters {
   display: flex;
   align-items: center;
@@ -174,6 +215,7 @@
 
 .users-search-box input {
   width: 100%;
+  min-width: 0;
   border: none;
   outline: none;
   color: #334155;
@@ -192,6 +234,10 @@
   font-size: 13px;
   outline: none;
 }
+
+/* ================================
+   EMPLOYEE TABLE
+================================ */
 
 .users-table-wrapper {
   width: 100%;
@@ -263,6 +309,10 @@
   font-size: 12px;
 }
 
+/* ================================
+   ROLE BADGES
+================================ */
+
 .users-role {
   display: inline-block;
   padding: 6px 10px;
@@ -281,6 +331,10 @@
   background: #eff6ff;
   color: #2563eb;
 }
+
+/* ================================
+   STATUS BADGES
+================================ */
 
 .users-status {
   display: inline-flex;
@@ -316,6 +370,10 @@
 .users-status-inactive > span {
   background: #f43f5e;
 }
+
+/* ================================
+   ROW ACTIONS
+================================ */
 
 .users-actions-column {
   text-align: center;
@@ -353,6 +411,15 @@
   background: #eff6ff;
 }
 
+.users-action-password {
+  color: #7c3aed;
+}
+
+.users-action-password:hover {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
 .users-action-deactivate {
   color: #dc2626;
 }
@@ -368,6 +435,10 @@
 .users-action-activate:hover {
   background: #f0fdf4;
 }
+
+/* ================================
+   EMPTY AND LOADING STATES
+================================ */
 
 .users-empty-state {
   height: 180px;
@@ -395,6 +466,10 @@
     transform: rotate(360deg);
   }
 }
+
+/* ================================
+   FEEDBACK MESSAGES
+================================ */
 
 .users-feedback {
   padding: 12px 15px;
@@ -428,6 +503,10 @@
   background: #fff1f2;
   color: #be123c;
 }
+
+/* ================================
+   MODAL
+================================ */
 
 .users-modal-overlay {
   position: fixed;
@@ -474,11 +553,21 @@
   background: transparent;
   color: #64748b;
   cursor: pointer;
+  padding: 3px;
+}
+
+.users-modal-header > button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .users-modal form {
   padding: 22px;
 }
+
+/* ================================
+   FORM FIELDS
+================================ */
 
 .users-form-group {
   margin-bottom: 17px;
@@ -503,7 +592,6 @@
   background: white;
   color: #334155;
   font-size: 13px;
-  box-sizing: border-box;
 }
 
 .users-form-group input:focus,
@@ -512,12 +600,22 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.users-form-group input:disabled,
+.users-form-group select:disabled {
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
 .users-form-group small {
   display: block;
   margin-top: 6px;
   font-size: 11px;
   color: #8992a2;
 }
+
+/* ================================
+   PASSWORD INPUT AND TOGGLE
+================================ */
 
 .users-password-field {
   position: relative;
@@ -536,7 +634,14 @@
   background: transparent;
   color: #8992a2;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 3px;
 }
+
+/* ================================
+   ROLE INFORMATION
+================================ */
 
 .users-role-information {
   display: flex;
@@ -565,12 +670,78 @@
   color: #526987;
 }
 
+/* ================================
+   PASSWORD RESET MODAL
+================================ */
+
+.users-password-modal {
+  max-width: 470px;
+}
+
+.users-password-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  margin-bottom: 20px;
+  background: #f8fafc;
+  border: 1px solid #edf0f4;
+  border-radius: 9px;
+}
+
+.users-password-user strong,
+.users-password-user span {
+  display: block;
+}
+
+.users-password-user strong {
+  color: #273449;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+.users-password-user span {
+  color: #8992a2;
+  font-size: 12px;
+}
+
+.users-password-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px;
+  margin-top: 5px;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.users-password-warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.users-password-warning p {
+  margin: 0;
+  color: #92400e;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* ================================
+   MODAL ACTIONS
+================================ */
+
 .users-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 23px;
 }
+
+/* ================================
+   RESPONSIVE DESIGN
+================================ */
 
 @media (max-width: 1050px) {
   .users-stats-grid {
@@ -612,17 +783,42 @@
   .users-content-heading {
     align-items: flex-start;
   }
-}
-.users-page {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  padding: 0;
+
+  .users-table th,
+  .users-table td {
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+
+  .users-row-actions {
+    gap: 5px;
+  }
+
+  .users-row-actions button {
+    width: 31px;
+    height: 31px;
+  }
 }
 
-.users-page *,
-.users-page *::before,
-.users-page *::after {
-  box-sizing: border-box;
+@media (max-width: 420px) {
+  .users-modal-overlay {
+    padding: 10px;
+  }
+
+  .users-modal-header,
+  .users-modal form {
+    padding: 17px;
+  }
+
+  .users-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .users-modal-actions button {
+    width: 100%;
+  }
+
+  .users-content-heading {
+    flex-direction: column;
+  }
 }

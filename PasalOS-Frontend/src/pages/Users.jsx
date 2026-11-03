@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Power,
+  KeyRound,
 } from 'lucide-react'
 
 import userService from '../services/userService'
@@ -24,6 +25,11 @@ const emptyForm = {
   email: '',
   password: '',
   role: 'cashier',
+}
+
+const emptyPasswordForm = {
+  new_password: '',
+  confirm_password: '',
 }
 
 const getErrorMessage = (error) =>
@@ -51,26 +57,35 @@ export default function Users() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
 
+  // Create and edit employee modal
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [showPassword, setShowPassword] = useState(false)
 
+  // Reset employee password modal
+  const [passwordUser, setPasswordUser] = useState(null)
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm)
+  const [showResetPassword, setShowResetPassword] = useState(false)
+  const [resetSaving, setResetSaving] = useState(false)
+
+  // Feedback and status
   const [feedback, setFeedback] = useState({
     type: '',
     message: '',
   })
-
   const [statusUpdating, setStatusUpdating] = useState(null)
 
-  const showFeedback = (type, message) => {
+  const showFeedback = useCallback((type, message) => {
     setFeedback({ type, message })
-  }
+  }, [])
 
+  // Fetch employees
   const fetchUsers = useCallback(async () => {
     setLoading(true)
 
@@ -87,12 +102,13 @@ export default function Users() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [showFeedback])
 
   useEffect(() => {
     fetchUsers()
   }, [fetchUsers])
 
+  // Employee statistics
   const activeUsers = users.filter(
     (user) => user.status === 'active'
   ).length
@@ -109,6 +125,7 @@ export default function Users() {
     (user) => user.role === 'cashier'
   ).length
 
+  // Search and filters
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const searchValue = search.trim().toLowerCase()
@@ -128,6 +145,7 @@ export default function Users() {
     })
   }, [users, search, roleFilter, statusFilter])
 
+  // Open create employee modal
   const openCreateModal = () => {
     setEditingUser(null)
     setForm(emptyForm)
@@ -136,6 +154,7 @@ export default function Users() {
     setFeedback({ type: '', message: '' })
   }
 
+  // Open edit employee modal
   const openEditModal = (user) => {
     setEditingUser(user)
 
@@ -151,6 +170,7 @@ export default function Users() {
     setFeedback({ type: '', message: '' })
   }
 
+  // Close create/edit modal
   const closeModal = () => {
     if (saving) return
 
@@ -160,6 +180,7 @@ export default function Users() {
     setShowPassword(false)
   }
 
+  // Handle create/edit form inputs
   const handleInputChange = (event) => {
     const { name, value } = event.target
 
@@ -169,6 +190,7 @@ export default function Users() {
     }))
   }
 
+  // Create or update employee
   const handleSubmit = async (event) => {
     event.preventDefault()
     setFeedback({ type: '', message: '' })
@@ -177,7 +199,10 @@ export default function Users() {
     const email = form.email.trim().toLowerCase()
 
     if (!full_name || !email) {
-      showFeedback('error', 'Please enter the employee name and email.')
+      showFeedback(
+        'error',
+        'Please enter the employee name and email.'
+      )
       return
     }
 
@@ -192,12 +217,18 @@ export default function Users() {
     }
 
     if (!editingUser && form.password.length < 8) {
-      showFeedback('error', 'Password must contain at least 8 characters.')
+      showFeedback(
+        'error',
+        'Password must contain at least 8 characters.'
+      )
       return
     }
 
     if (!editingUser && form.password.length > 72) {
-      showFeedback('error', 'Password cannot exceed 72 characters.')
+      showFeedback(
+        'error',
+        'Password cannot exceed 72 characters.'
+      )
       return
     }
 
@@ -217,7 +248,9 @@ export default function Users() {
         )
 
         if (!response.success) {
-          throw new Error(response.message || 'Failed to update employee.')
+          throw new Error(
+            response.message || 'Failed to update employee.'
+          )
         }
 
         showFeedback('success', 'Employee updated successfully.')
@@ -228,7 +261,9 @@ export default function Users() {
         })
 
         if (!response.success) {
-          throw new Error(response.message || 'Failed to create employee.')
+          throw new Error(
+            response.message || 'Failed to create employee.'
+          )
         }
 
         showFeedback('success', 'Employee created successfully.')
@@ -239,6 +274,7 @@ export default function Users() {
       setModalOpen(false)
       setEditingUser(null)
       setForm(emptyForm)
+      setShowPassword(false)
     } catch (error) {
       showFeedback('error', getErrorMessage(error))
     } finally {
@@ -246,6 +282,7 @@ export default function Users() {
     }
   }
 
+  // Activate or deactivate employee
   const handleStatusChange = async (user) => {
     const nextStatus =
       user.status === 'active' ? 'inactive' : 'active'
@@ -268,7 +305,9 @@ export default function Users() {
       )
 
       if (!response.success) {
-        throw new Error(response.message || 'Failed to update status.')
+        throw new Error(
+          response.message || 'Failed to update status.'
+        )
       }
 
       setUsers((previous) =>
@@ -279,7 +318,10 @@ export default function Users() {
         )
       )
 
-      showFeedback('success', response.message)
+      showFeedback(
+        'success',
+        response.message || 'Employee status updated successfully.'
+      )
     } catch (error) {
       showFeedback('error', getErrorMessage(error))
     } finally {
@@ -287,8 +329,93 @@ export default function Users() {
     }
   }
 
+  // Open password reset modal
+  const openPasswordModal = (user) => {
+    setPasswordUser(user)
+    setPasswordForm(emptyPasswordForm)
+    setShowResetPassword(false)
+    setFeedback({ type: '', message: '' })
+  }
+
+  // Close password reset modal
+  // This function can also close the modal after a successful request.
+  const closePasswordModal = (force = false) => {
+    if (resetSaving && !force) return
+
+    setPasswordUser(null)
+    setPasswordForm(emptyPasswordForm)
+    setShowResetPassword(false)
+  }
+
+  // Handle password form input
+  const handlePasswordInputChange = (event) => {
+    const { name, value } = event.target
+
+    setPasswordForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }))
+  }
+
+  // Reset employee password
+  const handlePasswordReset = async (event) => {
+    event.preventDefault()
+    setFeedback({ type: '', message: '' })
+
+    if (!passwordUser) return
+
+    const { new_password, confirm_password } = passwordForm
+
+    if (new_password.length < 8 || new_password.length > 72) {
+      showFeedback(
+        'error',
+        'Password must contain between 8 and 72 characters.'
+      )
+      return
+    }
+
+    if (new_password !== confirm_password) {
+      showFeedback('error', 'Passwords do not match.')
+      return
+    }
+
+    setResetSaving(true)
+
+    try {
+      const response = await userService.resetUserPassword(
+        passwordUser.id,
+        {
+          new_password,
+          confirm_password,
+        }
+      )
+
+      if (!response.success) {
+        throw new Error(
+          response.message || 'Password reset failed.'
+        )
+      }
+
+      const employeeName = passwordUser.full_name
+
+      // Force-close because resetSaving is still true here.
+      closePasswordModal(true)
+
+      showFeedback(
+        'success',
+        response.message ||
+          `Password reset successfully for ${employeeName}.`
+      )
+    } catch (error) {
+      showFeedback('error', getErrorMessage(error))
+    } finally {
+      setResetSaving(false)
+    }
+  }
+
   return (
     <div className="users-page">
+      {/* Page header */}
       <div className="users-page-header">
         <div>
           <div className="users-breadcrumb">
@@ -324,6 +451,7 @@ export default function Users() {
         </div>
       </div>
 
+      {/* Feedback message */}
       {feedback.message && (
         <div
           className={`users-feedback users-feedback-${feedback.type}`}
@@ -347,6 +475,7 @@ export default function Users() {
         </div>
       )}
 
+      {/* Statistics */}
       <div className="users-stats-grid">
         <StatCard
           title="Total Employees"
@@ -377,6 +506,7 @@ export default function Users() {
         />
       </div>
 
+      {/* Employee table */}
       <section className="users-content-card">
         <div className="users-content-heading">
           <div>
@@ -389,6 +519,7 @@ export default function Users() {
           </span>
         </div>
 
+        {/* Search and filters */}
         <div className="users-filters">
           <div className="users-search-box">
             <Search size={18} />
@@ -422,6 +553,7 @@ export default function Users() {
           </select>
         </div>
 
+        {/* Table */}
         <div className="users-table-wrapper">
           <table className="users-table">
             <thead>
@@ -438,7 +570,10 @@ export default function Users() {
               {loading ? (
                 <tr>
                   <td colSpan="5" className="users-empty-state">
-                    <RefreshCw className="users-loading-icon" size={23} />
+                    <RefreshCw
+                      className="users-loading-icon"
+                      size={23}
+                    />
                     <span>Loading employees...</span>
                   </td>
                 </tr>
@@ -469,7 +604,9 @@ export default function Users() {
                     </td>
 
                     <td>
-                      <span className={`users-role users-role-${user.role}`}>
+                      <span
+                        className={`users-role users-role-${user.role}`}
+                      >
                         {user.role}
                       </span>
                     </td>
@@ -495,6 +632,7 @@ export default function Users() {
 
                     <td>
                       <div className="users-row-actions">
+                        {/* Edit employee */}
                         <button
                           type="button"
                           className="users-action-edit"
@@ -505,6 +643,18 @@ export default function Users() {
                           <Edit size={16} />
                         </button>
 
+                        {/* Reset password */}
+                        <button
+                          type="button"
+                          className="users-action-password"
+                          title="Reset employee password"
+                          aria-label={`Reset password for ${user.full_name}`}
+                          onClick={() => openPasswordModal(user)}
+                        >
+                          <KeyRound size={16} />
+                        </button>
+
+                        {/* Activate or deactivate */}
                         <button
                           type="button"
                           className={
@@ -537,6 +687,7 @@ export default function Users() {
         </div>
       </section>
 
+      {/* Create / Edit employee modal */}
       {modalOpen && (
         <div
           className="users-modal-overlay"
@@ -622,7 +773,9 @@ export default function Users() {
 
                     <button
                       type="button"
-                      onClick={() => setShowPassword((value) => !value)}
+                      onClick={() =>
+                        setShowPassword((value) => !value)
+                      }
                       aria-label={
                         showPassword ? 'Hide password' : 'Show password'
                       }
@@ -661,7 +814,9 @@ export default function Users() {
 
                 <div>
                   <strong>
-                    {form.role === 'manager' ? 'Manager Access' : 'Cashier Access'}
+                    {form.role === 'manager'
+                      ? 'Manager Access'
+                      : 'Cashier Access'}
                   </strong>
 
                   <p>
@@ -692,6 +847,155 @@ export default function Users() {
                     : editingUser
                       ? 'Save Changes'
                       : 'Create Employee'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset password modal */}
+      {passwordUser && (
+        <div
+          className="users-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closePasswordModal()
+            }
+          }}
+        >
+          <div
+            className="users-modal users-password-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-password-title"
+          >
+            <div className="users-modal-header">
+              <div>
+                <h2 id="reset-password-title">Reset Password</h2>
+                <p>Set a new password for this employee account.</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => closePasswordModal()}
+                disabled={resetSaving}
+                aria-label="Close password reset modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordReset}>
+              <div className="users-password-user">
+                <div className="users-avatar">
+                  {passwordUser.full_name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+
+                <div>
+                  <strong>{passwordUser.full_name}</strong>
+                  <span>{passwordUser.email}</span>
+                </div>
+              </div>
+
+              <div className="users-form-group">
+                <label htmlFor="reset-new-password">
+                  New Password
+                </label>
+
+                <div className="users-password-field">
+                  <input
+                    id="reset-new-password"
+                    name="new_password"
+                    type={showResetPassword ? 'text' : 'password'}
+                    placeholder="Enter new password"
+                    value={passwordForm.new_password}
+                    onChange={handlePasswordInputChange}
+                    minLength={8}
+                    maxLength={72}
+                    autoComplete="new-password"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowResetPassword((value) => !value)
+                    }
+                    aria-label={
+                      showResetPassword ? 'Hide password' : 'Show password'
+                    }
+                  >
+                    {showResetPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
+                </div>
+
+                <small>
+                  Password must contain between 8 and 72 characters.
+                </small>
+              </div>
+
+              <div className="users-form-group">
+                <label htmlFor="reset-confirm-password">
+                  Confirm New Password
+                </label>
+
+                <input
+                  id="reset-confirm-password"
+                  name="confirm_password"
+                  type={showResetPassword ? 'text' : 'password'}
+                  placeholder="Re-enter new password"
+                  value={passwordForm.confirm_password}
+                  onChange={handlePasswordInputChange}
+                  minLength={8}
+                  maxLength={72}
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+
+              <div className="users-password-warning">
+                <KeyRound size={18} />
+
+                <p>
+                  The employee will need to use this new password the next
+                  time they log in. Make sure to share it with them securely.
+                </p>
+              </div>
+
+              <div className="users-modal-actions">
+                <button
+                  type="button"
+                  className="users-cancel-button"
+                  onClick={() => closePasswordModal()}
+                  disabled={resetSaving}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="users-primary-button"
+                  disabled={resetSaving}
+                >
+                  {resetSaving ? (
+                    <>
+                      <RefreshCw
+                        size={16}
+                        className="users-loading-icon"
+                      />
+                      Resetting...
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound size={16} />
+                      Reset Password
+                    </>
+                  )}
                 </button>
               </div>
             </form>
