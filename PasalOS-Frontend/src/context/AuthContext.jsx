@@ -3,6 +3,7 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
 } from 'react'
 
 import {
@@ -25,6 +26,17 @@ export const AuthProvider = ({ children }) => {
       return null
     }
   })
+  useEffect(() => {
+  const handleSessionExpired = () => {
+    setUser(null)
+  }
+
+  window.addEventListener('pasalos-session-expired', handleSessionExpired)
+
+  return () => {
+    window.removeEventListener('pasalos-session-expired', handleSessionExpired)
+  }
+}, [])
 
   const [loading, setLoading] = useState(false)
 
