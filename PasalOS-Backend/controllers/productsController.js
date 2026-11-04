@@ -4,7 +4,9 @@ const pool = require('../config/db')
 // Get all products belonging to the development shop
 exports.getProducts = async (req, res) => {
   try {
-    const shopId = req.shopId
+    const shopId = req.
+    console.log('Products API - Shop ID:', shopId)
+console.log('Authenticated User:', req.user)
 
     const [products] = await pool.execute(
       `SELECT
