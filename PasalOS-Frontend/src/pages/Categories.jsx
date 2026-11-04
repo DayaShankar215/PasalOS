@@ -1,206 +1,184 @@
-import { useEffect, useMemo, useState } from 'react'
-import {
-  FolderOpen,
-  Tags,
-  Package,
-  Search,
-  Plus,
-} from 'lucide-react'
+import { useEffect, useMemo, useState } from "react";
+import { FolderOpen, Tags, Package, Search, Plus } from "lucide-react";
 
-import { useAuth } from '../context/AuthContext'
-import { hasPermission } from '../utils/permissions'
+import { useAuth } from "../context/AuthContext";
+import { hasPermission } from "../utils/permissions";
 
-import categoryService from '../services/categoryService'
+import categoryService from "../services/categoryService";
 
-import CategoryTable from '../components/categories/CategoryTable'
-import CategoryForm from '../components/categories/CategoryForm'
-import DeleteCategoryModal from '../components/categories/DeleteCategoryModal'
+import CategoryTable from "../components/categories/CategoryTable";
+import CategoryForm from "../components/categories/CategoryForm";
+import DeleteCategoryModal from "../components/categories/DeleteCategoryModal";
 
 export default function Categories() {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
-  const canManageCategories = hasPermission(
-    user?.role,
-    'categories',
-    'full'
-  )
+  const canManageCategories = hasPermission(user?.role, "categories", "full");
 
-  const [categories, setCategories] = useState([])
-  const [search, setSearch] = useState('')
+  const [categories, setCategories] = useState([]);
+  const [search, setSearch] = useState("");
 
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState(null)
-  const [deletingCategory, setDeletingCategory] = useState(null)
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [deletingCategory, setDeletingCategory] = useState(null);
 
   // Load categories from MySQL
   async function fetchCategories() {
     try {
-      setError('')
+      setError("");
 
-      const data = await categoryService.getAll()
+      const data = await categoryService.getAll();
 
       const formattedCategories = data.map((category) => ({
         id: category.id,
         name: category.name,
-        description: category.description || '',
+        description: category.description || "",
         productCount: Number(category.product_count ?? 0),
 
         // The current database does not have a status column.
-        status: 'Active',
-      }))
+        status: "Active",
+      }));
 
-      setCategories(formattedCategories)
+      setCategories(formattedCategories);
     } catch (err) {
-      console.error('Failed to load categories:', err)
+      console.error("Failed to load categories:", err);
 
       setError(
         err.response?.data?.message ||
-        'Unable to load categories. Please try again.'
-      )
+          "Unable to load categories. Please try again.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchCategories()
-  }, [])
+    fetchCategories();
+  }, []);
 
   // Filter categories
   const filteredCategories = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = search.trim().toLowerCase();
 
     return categories.filter(
       (category) =>
         category.name.toLowerCase().includes(query) ||
-        category.description.toLowerCase().includes(query)
-    )
-  }, [categories, search])
+        category.description.toLowerCase().includes(query),
+    );
+  }, [categories, search]);
 
   // Summary calculations
-  const activeCount = categories.length
+  const activeCount = categories.length;
 
   const totalProducts = categories.reduce(
     (total, category) => total + category.productCount,
-    0
-  )
+    0,
+  );
 
   // Open add form
   function openAddForm() {
-    if (!canManageCategories) return
+    if (!canManageCategories) return;
 
-    setEditingCategory(null)
-    setIsFormOpen(true)
+    setEditingCategory(null);
+    setIsFormOpen(true);
   }
 
   // Open edit form
   function openEditForm(category) {
-    if (!canManageCategories) return
+    if (!canManageCategories) return;
 
-    setEditingCategory(category)
-    setIsFormOpen(true)
+    setEditingCategory(category);
+    setIsFormOpen(true);
   }
 
   // Close form
   function closeForm() {
-    setIsFormOpen(false)
-    setEditingCategory(null)
+    setIsFormOpen(false);
+    setEditingCategory(null);
   }
 
   // Create or update category
   async function saveCategory(formData) {
-    if (!canManageCategories || saving) return
+    if (!canManageCategories || saving) return;
 
     try {
-      setSaving(true)
-      setError('')
+      setSaving(true);
+      setError("");
 
       if (editingCategory) {
-        await categoryService.update(
-          editingCategory.id,
-          formData
-        )
+        await categoryService.update(editingCategory.id, formData);
       } else {
-        await categoryService.create(formData)
+        await categoryService.create(formData);
       }
 
-      await fetchCategories()
-      closeForm()
+      await fetchCategories();
+      closeForm();
     } catch (err) {
-      console.error('Failed to save category:', err)
+      console.error("Failed to save category:", err);
 
       setError(
         err.response?.data?.message ||
-        'Unable to save category. Please try again.'
-      )
+          "Unable to save category. Please try again.",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   // Open delete confirmation
   function openDeleteModal(category) {
-    if (!canManageCategories) return
+    if (!canManageCategories) return;
 
-    setDeletingCategory(category)
+    setDeletingCategory(category);
   }
 
   // Delete category
   async function confirmDelete(categoryId) {
-    if (!canManageCategories || saving) return
+    if (!canManageCategories || saving) return;
 
     try {
-      setSaving(true)
-      setError('')
+      setSaving(true);
+      setError("");
 
-      await categoryService.delete(categoryId)
+      await categoryService.delete(categoryId);
 
-      await fetchCategories()
-      setDeletingCategory(null)
+      await fetchCategories();
+      setDeletingCategory(null);
     } catch (err) {
-      console.error('Failed to delete category:', err)
+      console.error("Failed to delete category:", err);
 
       setError(
         err.response?.data?.message ||
-        'Unable to delete category. Please try again.'
-      )
+          "Unable to delete category. Please try again.",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   // Actual product count from the backend
   const deletingProductCount = deletingCategory
     ? deletingCategory.productCount
-    : 0
+    : 0;
 
   return (
     <div className="products-page">
-
       {/* Page Heading */}
       <div className="page-heading products-heading">
         <div>
-          <div className="eyebrow">
-            INVENTORY MANAGEMENT
-          </div>
+          <div className="eyebrow">INVENTORY MANAGEMENT</div>
 
           <h1>Categories</h1>
 
-          <p>
-            Organize and manage your product categories.
-          </p>
+          <p>Organize and manage your product categories.</p>
         </div>
 
         {canManageCategories && (
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={openAddForm}
-          >
+          <button type="button" className="btn-primary" onClick={openAddForm}>
             <Plus size={18} />
             Add Category
           </button>
@@ -216,7 +194,6 @@ export default function Categories() {
 
       {/* Category Summary */}
       <div className="product-summary-grid">
-
         <div className="product-summary-card">
           <div className="summary-icon summary-icon-blue">
             <FolderOpen size={21} />
@@ -224,7 +201,7 @@ export default function Categories() {
 
           <div>
             <p>Total Categories</p>
-            <h3>{loading ? '...' : categories.length}</h3>
+            <h3>{loading ? "..." : categories.length}</h3>
             <span>All registered categories</span>
           </div>
         </div>
@@ -236,7 +213,7 @@ export default function Categories() {
 
           <div>
             <p>Available Categories</p>
-            <h3>{loading ? '...' : activeCount}</h3>
+            <h3>{loading ? "..." : activeCount}</h3>
             <span>Categories registered in the database</span>
           </div>
         </div>
@@ -248,23 +225,21 @@ export default function Categories() {
 
           <div>
             <p>Total Products</p>
-            <h3>{loading ? '...' : totalProducts}</h3>
+            <h3>{loading ? "..." : totalProducts}</h3>
             <span>Products assigned to categories</span>
           </div>
         </div>
-
       </div>
 
       {/* Categories Table */}
       <section className="panel products-panel">
-
         <div className="products-panel-header">
           <div>
             <h2>All Categories</h2>
 
             <p>
-              Showing {filteredCategories.length} of{' '}
-              {categories.length} categories
+              Showing {filteredCategories.length} of {categories.length}{" "}
+              categories
             </p>
           </div>
         </div>
@@ -285,19 +260,15 @@ export default function Categories() {
 
         {/* Table */}
         {loading ? (
-          <div className="loading-state">
-            Loading categories...
-          </div>
+          <div className="loading-state">Loading categories...</div>
         ) : (
           <CategoryTable
             categories={filteredCategories}
-            products={[]}
             onEdit={openEditForm}
             onDelete={openDeleteModal}
             canManageCategories={canManageCategories}
           />
         )}
-
       </section>
 
       {/* Add / Edit Category */}
@@ -319,7 +290,6 @@ export default function Categories() {
           onClose={() => setDeletingCategory(null)}
         />
       )}
-
     </div>
-  )
+  );
 }
