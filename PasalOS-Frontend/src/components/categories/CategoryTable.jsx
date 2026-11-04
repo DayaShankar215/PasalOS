@@ -3,7 +3,6 @@ import { Edit2, Trash2, FolderOpen, Package } from 'lucide-react'
 
 export default function CategoryTable({
   categories,
-  products,
   onEdit,
   onDelete,
   canManageCategories = false,
@@ -30,16 +29,14 @@ export default function CategoryTable({
             <th>Products</th>
             <th>Status</th>
 
-            {/* Actions visible to Owner and Manager */}
             {canManageCategories && <th>Actions</th>}
           </tr>
         </thead>
 
         <tbody>
           {categories.map((category) => {
-            const productCount = products.filter(
-              (product) => product.category === category.name,
-            ).length
+            // Product count comes directly from the backend
+            const productCount = Number(category.productCount ?? 0)
 
             return (
               <tr key={category.id}>
@@ -76,21 +73,15 @@ export default function CategoryTable({
                   </span>
                 </td>
 
-                {/* Category Status */}
+                {/* Status */}
                 <td>
-                  <span
-                    className={
-                      category.status === 'Active'
-                        ? 'status-badge'
-                        : 'category-inactive-badge'
-                    }
-                  >
+                  <span className="status-badge">
                     <span className="status-dot" />
-                    {category.status}
+                    Active
                   </span>
                 </td>
 
-                {/* Edit and Delete Actions */}
+                {/* Actions */}
                 {canManageCategories && (
                   <td>
                     <div className="product-actions">
