@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { FolderPlus, X } from 'lucide-react'
 
@@ -10,7 +11,6 @@ export default function CategoryForm({
   const [form, setForm] = useState({
     name: '',
     description: '',
-    status: 'Active',
   })
 
   const [errors, setErrors] = useState({})
@@ -19,15 +19,13 @@ export default function CategoryForm({
     setForm(
       category
         ? {
-            name: category.name,
+            name: category.name || '',
             description: category.description || '',
-            status: category.status || 'Active',
           }
         : {
             name: '',
             description: '',
-            status: 'Active',
-          },
+          }
     )
 
     setErrors({})
@@ -57,8 +55,9 @@ export default function CategoryForm({
     } else {
       const duplicate = existingCategories.some(
         (item) =>
-          item.name.trim().toLowerCase() === form.name.trim().toLowerCase() &&
-          item.id !== category?.id,
+          item.name.trim().toLowerCase() ===
+            form.name.trim().toLowerCase() &&
+          String(item.id) !== String(category?.id)
       )
 
       if (duplicate) {
@@ -67,11 +66,13 @@ export default function CategoryForm({
     }
 
     if (form.name.trim().length > 50) {
-      nextErrors.name = 'Category name must be 50 characters or fewer.'
+      nextErrors.name =
+        'Category name must be 50 characters or fewer.'
     }
 
     if (form.description.trim().length > 200) {
-      nextErrors.description = 'Description must be 200 characters or fewer.'
+      nextErrors.description =
+        'Description must be 200 characters or fewer.'
     }
 
     setErrors(nextErrors)
@@ -81,7 +82,6 @@ export default function CategoryForm({
     onSave({
       name: form.name.trim(),
       description: form.description.trim(),
-      status: form.status,
     })
   }
 
@@ -104,6 +104,7 @@ export default function CategoryForm({
               <h2 id="category-form-title">
                 {category ? 'Edit Category' : 'Add New Category'}
               </h2>
+
               <p>Organize your products into categories.</p>
             </div>
           </div>
@@ -120,8 +121,11 @@ export default function CategoryForm({
 
         <form onSubmit={handleSubmit}>
           <div className="category-form-fields">
+
+            {/* Category Name */}
             <label className="form-field">
               <span>Category Name *</span>
+
               <input
                 name="name"
                 value={form.name}
@@ -130,11 +134,14 @@ export default function CategoryForm({
                 maxLength={50}
                 autoFocus
               />
+
               {errors.name && <small>{errors.name}</small>}
             </label>
 
+            {/* Description */}
             <label className="form-field">
               <span>Description</span>
+
               <textarea
                 name="description"
                 value={form.description}
@@ -143,22 +150,12 @@ export default function CategoryForm({
                 rows={4}
                 maxLength={200}
               />
+
               {errors.description && (
                 <small>{errors.description}</small>
               )}
             </label>
 
-            <label className="form-field">
-              <span>Status</span>
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </label>
           </div>
 
           <div className="product-form-footer">
