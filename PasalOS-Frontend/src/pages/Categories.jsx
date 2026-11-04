@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   FolderOpen,
   Tags,
@@ -8,10 +7,10 @@ import {
   Plus,
 } from 'lucide-react'
 
-import { productCategories, initialProducts } from '../data/mockData'
-
 import { useAuth } from '../context/AuthContext'
 import { hasPermission } from '../utils/permissions'
+
+import categoryService from '../services/categoryService'
 
 import CategoryTable from '../components/categories/CategoryTable'
 import CategoryForm from '../components/categories/CategoryForm'
@@ -20,25 +19,56 @@ import DeleteCategoryModal from '../components/categories/DeleteCategoryModal'
 export default function Categories() {
   const { user } = useAuth()
 
-  // Check category management permission
   const canManageCategories = hasPermission(
     user?.role,
     'categories',
     'full'
   )
 
-  const [categories, setCategories] = useState(() =>
-    productCategories.map((category) => ({ ...category })),
-  )
-
-  const [products] = useState(() =>
-    initialProducts.map((product) => ({ ...product })),
-  )
-
+  const [categories, setCategories] = useState([])
   const [search, setSearch] = useState('')
+
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [deletingCategory, setDeletingCategory] = useState(null)
+
+  // Load categories from MySQL
+  async function fetchCategories() {
+    try {
+      setError('')
+
+      const data = await categoryService.getAll()
+
+      const formattedCategories = data.map((category) => ({
+        id: category.id,
+        name: category.name,
+        description: category.description || '',
+        productCount: Number(category.product_count ?? 0),
+
+        // The current database does not have a status column.
+        status: 'Active',
+      }))
+
+      setCategories(formattedCategories)
+    } catch (err) {
+      console.error('Failed to load categories:', err)
+
+      setError(
+        err.response?.data?.message ||
+        'Unable to load categories. Please try again.'
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
 
   // Filter categories
   const filteredCategories = useMemo(() => {
@@ -47,18 +77,19 @@ export default function Categories() {
     return categories.filter(
       (category) =>
         category.name.toLowerCase().includes(query) ||
-        category.description.toLowerCase().includes(query),
+        category.description.toLowerCase().includes(query)
     )
   }, [categories, search])
 
-  // Category summary calculations
-  const activeCount = categories.filter(
-    (category) => category.status === 'Active',
-  ).length
+  // Summary calculations
+  const activeCount = categories.length
 
-  const totalProducts = products.length
+  const totalProducts = categories.reduce(
+    (total, category) => total + category.productCount,
+    0
+  )
 
-  // Open add category form
+  // Open add form
   function openAddForm() {
     if (!canManageCategories) return
 
@@ -66,7 +97,7 @@ export default function Categories() {
     setIsFormOpen(true)
   }
 
-  // Open edit category form
+  // Open edit form
   function openEditForm(category) {
     if (!canManageCategories) return
 
@@ -74,35 +105,41 @@ export default function Categories() {
     setIsFormOpen(true)
   }
 
-  // Close category form
+  // Close form
   function closeForm() {
     setIsFormOpen(false)
     setEditingCategory(null)
   }
 
-  // Save category
-  function saveCategory(formData) {
-    if (!canManageCategories) return
+  // Create or update category
+  async function saveCategory(formData) {
+    if (!canManageCategories || saving) return
 
-    if (editingCategory) {
-      setCategories((previous) =>
-        previous.map((category) =>
-          category.id === editingCategory.id
-            ? { ...category, ...formData }
-            : category,
-        ),
+    try {
+      setSaving(true)
+      setError('')
+
+      if (editingCategory) {
+        await categoryService.update(
+          editingCategory.id,
+          formData
+        )
+      } else {
+        await categoryService.create(formData)
+      }
+
+      await fetchCategories()
+      closeForm()
+    } catch (err) {
+      console.error('Failed to save category:', err)
+
+      setError(
+        err.response?.data?.message ||
+        'Unable to save category. Please try again.'
       )
-    } else {
-      setCategories((previous) => [
-        ...previous,
-        {
-          ...formData,
-          id: Date.now(),
-        },
-      ])
+    } finally {
+      setSaving(false)
     }
-
-    closeForm()
   }
 
   // Open delete confirmation
@@ -112,22 +149,33 @@ export default function Categories() {
     setDeletingCategory(category)
   }
 
-  // Confirm category deletion
-  function confirmDelete(categoryId) {
-    if (!canManageCategories) return
+  // Delete category
+  async function confirmDelete(categoryId) {
+    if (!canManageCategories || saving) return
 
-    setCategories((previous) =>
-      previous.filter((category) => category.id !== categoryId),
-    )
+    try {
+      setSaving(true)
+      setError('')
 
-    setDeletingCategory(null)
+      await categoryService.delete(categoryId)
+
+      await fetchCategories()
+      setDeletingCategory(null)
+    } catch (err) {
+      console.error('Failed to delete category:', err)
+
+      setError(
+        err.response?.data?.message ||
+        'Unable to delete category. Please try again.'
+      )
+    } finally {
+      setSaving(false)
+    }
   }
 
-  // Count products associated with selected category
+  // Actual product count from the backend
   const deletingProductCount = deletingCategory
-    ? products.filter(
-        (product) => product.category === deletingCategory.name,
-      ).length
+    ? deletingCategory.productCount
     : 0
 
   return (
@@ -147,7 +195,6 @@ export default function Categories() {
           </p>
         </div>
 
-        {/* Add Category - Owner and Manager Only */}
         {canManageCategories && (
           <button
             type="button"
@@ -160,6 +207,13 @@ export default function Categories() {
         )}
       </div>
 
+      {/* API Error */}
+      {error && (
+        <div className="error-message" role="alert">
+          {error}
+        </div>
+      )}
+
       {/* Category Summary */}
       <div className="product-summary-grid">
 
@@ -170,7 +224,7 @@ export default function Categories() {
 
           <div>
             <p>Total Categories</p>
-            <h3>{categories.length}</h3>
+            <h3>{loading ? '...' : categories.length}</h3>
             <span>All registered categories</span>
           </div>
         </div>
@@ -181,9 +235,9 @@ export default function Categories() {
           </div>
 
           <div>
-            <p>Active Categories</p>
-            <h3>{activeCount}</h3>
-            <span>Available for use</span>
+            <p>Available Categories</p>
+            <h3>{loading ? '...' : activeCount}</h3>
+            <span>Categories registered in the database</span>
           </div>
         </div>
 
@@ -194,8 +248,8 @@ export default function Categories() {
 
           <div>
             <p>Total Products</p>
-            <h3>{totalProducts}</h3>
-            <span>Across all categories</span>
+            <h3>{loading ? '...' : totalProducts}</h3>
+            <span>Products assigned to categories</span>
           </div>
         </div>
 
@@ -215,7 +269,7 @@ export default function Categories() {
           </div>
         </div>
 
-        {/* Category Search */}
+        {/* Search */}
         <div className="product-filters">
           <div className="product-search">
             <Search size={18} />
@@ -229,18 +283,24 @@ export default function Categories() {
           </div>
         </div>
 
-        {/* Category Table */}
-        <CategoryTable
-          categories={filteredCategories}
-          products={products}
-          onEdit={openEditForm}
-          onDelete={openDeleteModal}
-          canManageCategories={canManageCategories}
-        />
+        {/* Table */}
+        {loading ? (
+          <div className="loading-state">
+            Loading categories...
+          </div>
+        ) : (
+          <CategoryTable
+            categories={filteredCategories}
+            products={[]}
+            onEdit={openEditForm}
+            onDelete={openDeleteModal}
+            canManageCategories={canManageCategories}
+          />
+        )}
 
       </section>
 
-      {/* Add / Edit Category Modal */}
+      {/* Add / Edit Category */}
       {canManageCategories && isFormOpen && (
         <CategoryForm
           category={editingCategory}
@@ -250,7 +310,7 @@ export default function Categories() {
         />
       )}
 
-      {/* Delete Category Confirmation */}
+      {/* Delete Confirmation */}
       {canManageCategories && deletingCategory && (
         <DeleteCategoryModal
           category={deletingCategory}
