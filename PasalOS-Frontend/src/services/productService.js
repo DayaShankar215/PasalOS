@@ -1,3 +1,4 @@
+
 import api from './api'
 
 function normalizeProduct(product, categories = []) {
@@ -30,7 +31,7 @@ function createPayload(productData, categories) {
     (category) =>
       String(category.id) === String(productData.categoryId) ||
       category.name.toLowerCase() ===
-        String(productData.category).trim().toLowerCase()
+        String(productData.category ?? '').trim().toLowerCase()
   )
 
   if (!selectedCategory) {
@@ -47,8 +48,8 @@ function createPayload(productData, categories) {
     selling_price: Number(productData.sellingPrice),
     stock: Number(productData.stock),
     min_stock: Number(productData.minStock ?? 5),
-    unit: productData.unit,
-    status: productData.status.toLowerCase(),
+    unit: productData.unit || 'Piece',
+    status: (productData.status || 'Active').toLowerCase(),
   }
 }
 
