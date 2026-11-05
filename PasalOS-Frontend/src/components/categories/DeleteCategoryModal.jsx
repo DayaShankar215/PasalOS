@@ -1,4 +1,4 @@
-import { AlertTriangle, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Trash2, X } from "lucide-react";
 
 export default function DeleteCategoryModal({
   category,
@@ -6,9 +6,9 @@ export default function DeleteCategoryModal({
   onConfirm,
   onClose,
 }) {
-  if (!category) return null
+  if (!category) return null;
 
-  const hasProducts = productCount > 0
+  const hasProducts = productCount > 0;
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -33,15 +33,15 @@ export default function DeleteCategoryModal({
         </div>
 
         <h2 id="delete-category-title">
-          {hasProducts ? 'Category In Use' : 'Delete Category?'}
+          {hasProducts ? "Category In Use" : "Delete Category?"}
         </h2>
 
         {hasProducts ? (
           <p>
-            <strong>{category.name}</strong> currently contains{' '}
-            <strong>{productCount}</strong>{' '}
-            {productCount === 1 ? 'product' : 'products'}.
-            Reassign or remove those products before deleting this category.
+            <strong>{category.name}</strong> currently contains{" "}
+            <strong>{productCount}</strong>{" "}
+            {productCount === 1 ? "product" : "products"}. Reassign or remove
+            those products before deleting this category.
           </p>
         ) : (
           <p>
@@ -51,12 +51,8 @@ export default function DeleteCategoryModal({
         )}
 
         <div className="delete-modal-actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={onClose}
-          >
-            {hasProducts ? 'Close' : 'Cancel'}
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            {hasProducts ? "Close" : "Cancel"}
           </button>
 
           {!hasProducts && (
@@ -72,5 +68,5 @@ export default function DeleteCategoryModal({
         </div>
       </section>
     </div>
-  )
+  );
 }
