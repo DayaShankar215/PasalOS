@@ -1,6 +1,5 @@
-
-import { useEffect, useState } from 'react'
-import { FolderPlus, X } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { FolderPlus, X } from "lucide-react";
 
 export default function CategoryForm({
   category,
@@ -9,80 +8,77 @@ export default function CategoryForm({
   onClose,
 }) {
   const [form, setForm] = useState({
-    name: '',
-    description: '',
-  })
+    name: "",
+    description: "",
+  });
 
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     setForm(
       category
         ? {
-            name: category.name || '',
-            description: category.description || '',
+            name: category.name || "",
+            description: category.description || "",
           }
         : {
-            name: '',
-            description: '',
-          }
-    )
+            name: "",
+            description: "",
+          },
+    );
 
-    setErrors({})
-  }, [category])
+    setErrors({});
+  }, [category]);
 
   function handleChange(event) {
-    const { name, value } = event.target
+    const { name, value } = event.target;
 
     setForm((previous) => ({
       ...previous,
       [name]: value,
-    }))
+    }));
 
     setErrors((previous) => ({
       ...previous,
-      [name]: '',
-    }))
+      [name]: "",
+    }));
   }
 
   function handleSubmit(event) {
-    event.preventDefault()
+    event.preventDefault();
 
-    const nextErrors = {}
+    const nextErrors = {};
 
     if (!form.name.trim()) {
-      nextErrors.name = 'Category name is required.'
+      nextErrors.name = "Category name is required.";
     } else {
       const duplicate = existingCategories.some(
         (item) =>
-          item.name.trim().toLowerCase() ===
-            form.name.trim().toLowerCase() &&
-          String(item.id) !== String(category?.id)
-      )
+          item.name.trim().toLowerCase() === form.name.trim().toLowerCase() &&
+          String(item.id) !== String(category?.id),
+      );
 
       if (duplicate) {
-        nextErrors.name = 'This category already exists.'
+        nextErrors.name = "This category already exists.";
       }
     }
 
     if (form.name.trim().length > 50) {
-      nextErrors.name =
-        'Category name must be 50 characters or fewer.'
+      nextErrors.name = "Category name must be 50 characters or fewer.";
     }
 
     if (form.description.trim().length > 200) {
-      nextErrors.description =
-        'Description must be 200 characters or fewer.'
+      nextErrors.description = "Description must be 200 characters or fewer.";
     }
 
-    setErrors(nextErrors)
+    setErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length > 0) return
+    if (Object.keys(nextErrors).length > 0) return;
 
     onSave({
       name: form.name.trim(),
       description: form.description.trim(),
-    })
+    });
   }
 
   return (
@@ -102,7 +98,7 @@ export default function CategoryForm({
 
             <div>
               <h2 id="category-form-title">
-                {category ? 'Edit Category' : 'Add New Category'}
+                {category ? "Edit Category" : "Add New Category"}
               </h2>
 
               <p>Organize your products into categories.</p>
@@ -121,7 +117,6 @@ export default function CategoryForm({
 
         <form onSubmit={handleSubmit}>
           <div className="category-form-fields">
-
             {/* Category Name */}
             <label className="form-field">
               <span>Category Name *</span>
@@ -151,28 +146,21 @@ export default function CategoryForm({
                 maxLength={200}
               />
 
-              {errors.description && (
-                <small>{errors.description}</small>
-              )}
+              {errors.description && <small>{errors.description}</small>}
             </label>
-
           </div>
 
           <div className="product-form-footer">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={onClose}
-            >
+            <button type="button" className="btn-secondary" onClick={onClose}>
               Cancel
             </button>
 
             <button type="submit" className="btn-primary">
-              {category ? 'Save Changes' : 'Create Category'}
+              {category ? "Save Changes" : "Create Category"}
             </button>
           </div>
         </form>
       </section>
     </div>
-  )
+  );
 }
