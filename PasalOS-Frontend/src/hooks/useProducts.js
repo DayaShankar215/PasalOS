@@ -1,4 +1,3 @@
-
 import {
   createContext,
   createElement,
@@ -6,105 +5,101 @@ import {
   useContext,
   useEffect,
   useState,
-} from 'react'
+} from "react";
 
-import productService from '../services/productService'
-import categoryService from '../services/categoryService'
+import productService from "../services/productService";
+import categoryService from "../services/categoryService";
 
-const ProductsContext = createContext(null)
+const ProductsContext = createContext(null);
 
 export function ProductsProvider({ children }) {
-  const [products, setProducts] = useState([])
-  const [categories, setCategories] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const refreshProducts = useCallback(async () => {
     try {
-      setError('')
+      setError("");
 
-      const categoryData = await categoryService.getAll()
+      const categoryData = await categoryService.getAll();
 
       const formattedCategories = categoryData.map((category) => ({
         id: category.id,
         name: category.name,
-        description: category.description || '',
+        description: category.description || "",
         productCount: Number(category.product_count ?? 0),
-        status: 'Active',
-      }))
+        status: "Active",
+      }));
 
-      setCategories(formattedCategories)
+      setCategories(formattedCategories);
 
-      const productData = await productService.getAll(
-        formattedCategories
-      )
+      const productData = await productService.getAll(formattedCategories);
 
-      setProducts(productData)
-      return productData
+      setProducts(productData);
+      return productData;
     } catch (err) {
-      console.error('Failed to load products:', err)
+      console.error("Failed to load products:", err);
 
       setError(
         err.response?.data?.message ||
-        err.message ||
-        'Unable to load products.'
-      )
+          err.message ||
+          "Unable to load products.",
+      );
 
-      throw err
+      throw err;
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    let active = true
+    let active = true;
 
     async function loadInitialProducts() {
       try {
-        setError('')
+        setError("");
 
-        const categoryData = await categoryService.getAll()
+        const categoryData = await categoryService.getAll();
 
-        if (!active) return
+        if (!active) return;
 
         const formattedCategories = categoryData.map((category) => ({
           id: category.id,
           name: category.name,
-          description: category.description || '',
+          description: category.description || "",
           productCount: Number(category.product_count ?? 0),
-          status: 'Active',
-        }))
+          status: "Active",
+        }));
 
-        setCategories(formattedCategories)
+        setCategories(formattedCategories);
 
-        const productData = await productService.getAll(
-          formattedCategories
-        )
+        const productData = await productService.getAll(formattedCategories);
 
         if (active) {
-          setProducts(productData)
+          setProducts(productData);
         }
       } catch (err) {
-        console.error('Failed to initialize products:', err)
+        console.error("Failed to initialize products:", err);
 
         if (active) {
           setError(
             err.response?.data?.message ||
-            err.message ||
-            'Unable to load products.'
-          )
+              err.message ||
+              "Unable to load products.",
+          );
         }
       } finally {
         if (active) {
-          setLoading(false)
+          setLoading(false);
         }
       }
     }
 
-    loadInitialProducts()
+    loadInitialProducts();
 
     return () => {
-      active = false
-    }
-  }, [])
+      active = false;
+    };
+  }, []);
 
   const contextValue = {
     products,
@@ -113,34 +108,30 @@ export function ProductsProvider({ children }) {
     loading,
     error,
     refreshProducts,
-  }
+  };
 
   return createElement(
     ProductsContext.Provider,
     { value: contextValue },
-    children
-  )
+    children,
+  );
 }
 
 export function useProducts() {
-  const context = useContext(ProductsContext)
+  const context = useContext(ProductsContext);
 
   if (!context) {
-    throw new Error(
-      'useProducts must be used inside ProductsProvider'
-    )
+    throw new Error("useProducts must be used inside ProductsProvider");
   }
 
-  return [context.products, context.setProducts]
+  return [context.products, context.setProducts];
 }
 
 export function useProductsMeta() {
-  const context = useContext(ProductsContext)
+  const context = useContext(ProductsContext);
 
   if (!context) {
-    throw new Error(
-      'useProductsMeta must be used inside ProductsProvider'
-    )
+    throw new Error("useProductsMeta must be used inside ProductsProvider");
   }
 
   return {
@@ -148,5 +139,5 @@ export function useProductsMeta() {
     loading: context.loading,
     error: context.error,
     refreshProducts: context.refreshProducts,
-  }
+  };
 }
