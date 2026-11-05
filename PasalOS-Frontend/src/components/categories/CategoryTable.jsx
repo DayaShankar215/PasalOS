@@ -1,5 +1,4 @@
-
-import { Edit2, Trash2, FolderOpen, Package } from 'lucide-react'
+import { Edit2, Trash2, FolderOpen, Package } from "lucide-react";
 
 export default function CategoryTable({
   categories,
@@ -15,13 +14,12 @@ export default function CategoryTable({
         <h3>No categories found</h3>
         <p>Try a different search or create a new category.</p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="table-container products-table-container">
       <table className="data-table products-table">
-
         <thead>
           <tr>
             <th>Category</th>
@@ -36,11 +34,10 @@ export default function CategoryTable({
         <tbody>
           {categories.map((category) => {
             // Product count comes directly from the backend
-            const productCount = Number(category.productCount ?? 0)
+            const productCount = Number(category.productCount ?? 0);
 
             return (
               <tr key={category.id}>
-
                 {/* Category Name */}
                 <td>
                   <div className="product-name-cell">
@@ -49,12 +46,10 @@ export default function CategoryTable({
                     </div>
 
                     <div>
-                      <span className="product-name">
-                        {category.name}
-                      </span>
+                      <span className="product-name">{category.name}</span>
 
                       <span className="product-unit">
-                        CAT-{String(category.id).padStart(3, '0')}
+                        CAT-{String(category.id).padStart(3, "0")}
                       </span>
                     </div>
                   </div>
@@ -62,14 +57,13 @@ export default function CategoryTable({
 
                 {/* Description */}
                 <td className="category-description">
-                  {category.description || '—'}
+                  {category.description || "—"}
                 </td>
 
                 {/* Product Count */}
                 <td>
                   <span className="category-product-count">
-                    {productCount}{' '}
-                    {productCount === 1 ? 'product' : 'products'}
+                    {productCount} {productCount === 1 ? "product" : "products"}
                   </span>
                 </td>
 
@@ -85,7 +79,6 @@ export default function CategoryTable({
                 {canManageCategories && (
                   <td>
                     <div className="product-actions">
-
                       <button
                         type="button"
                         className="icon-button edit-button"
@@ -105,17 +98,14 @@ export default function CategoryTable({
                       >
                         <Trash2 size={16} />
                       </button>
-
                     </div>
                   </td>
                 )}
-
               </tr>
-            )
+            );
           })}
         </tbody>
-
       </table>
     </div>
-  )
+  );
 }
