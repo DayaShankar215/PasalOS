@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from "react";
 import {
   Search,
   Receipt,
@@ -12,28 +11,24 @@ import {
   X,
   CalendarDays,
   ShieldAlert,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { useSales } from '../hooks/useSales'
-import { formatCurrency } from '../utils/currency'
-import { useAuth } from '../context/AuthContext'
-import { hasPermission } from '../utils/permissions'
+import { useSales } from "../hooks/useSales";
+import { formatCurrency } from "../utils/currency";
+import { useAuth } from "../context/AuthContext";
+import { hasPermission } from "../utils/permissions";
 
 export default function Sales() {
-  const [sales] = useSales()
+  const [sales] = useSales();
 
-  const { user } = useAuth()
+  const { user } = useAuth();
 
-  const canViewSales = hasPermission(
-    user?.role,
-    'sales',
-    'view'
-  )
+  const canViewSales = hasPermission(user?.role, "sales", "view");
 
-  const [search, setSearch] = useState('')
-  const [dateFilter, setDateFilter] = useState('All')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [selectedSale, setSelectedSale] = useState(null)
+  const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedSale, setSelectedSale] = useState(null);
 
   // ----------------------------------------
   // Access Control
@@ -52,97 +47,96 @@ export default function Sales() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-gray-500">
-            You do not have permission to view sales records.
-            Please contact your shop administrator if you need access.
+            You do not have permission to view sales records. Please contact
+            your shop administrator if you need access.
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // ----------------------------------------
   // Sales Summary
   // ----------------------------------------
 
-  const today = new Date().toDateString()
+  const today = new Date().toDateString();
 
   const todaySales = sales.filter(
-    (sale) => new Date(sale.date).toDateString() === today
-  )
+    (sale) => new Date(sale.date).toDateString() === today,
+  );
 
   const todayRevenue = todaySales.reduce(
     (sum, sale) => sum + Number(sale.total || 0),
-    0
-  )
+    0,
+  );
 
   const totalRevenue = sales.reduce(
     (sum, sale) => sum + Number(sale.total || 0),
-    0
-  )
+    0,
+  );
 
-  const averageSale = sales.length
-    ? totalRevenue / sales.length
-    : 0
+  const averageSale = sales.length ? totalRevenue / sales.length : 0;
 
   // ----------------------------------------
   // Search and Filters
   // ----------------------------------------
 
   const filteredSales = useMemo(() => {
-    const now = new Date()
+    const now = new Date();
 
     return sales.filter((sale) => {
-      const term = search.trim().toLowerCase()
+      const term = search.trim().toLowerCase();
 
       const matchesSearch = [
         sale.id,
         sale.customerName,
         sale.paymentMethod,
       ].some((value) =>
-        String(value || '').toLowerCase().includes(term)
-      )
+        String(value || "")
+          .toLowerCase()
+          .includes(term),
+      );
 
       const matchesStatus =
-        statusFilter === 'All' || sale.status === statusFilter
+        statusFilter === "All" || sale.status === statusFilter;
 
-      const saleDate = new Date(sale.date)
+      const saleDate = new Date(sale.date);
 
-      let matchesDate = true
+      let matchesDate = true;
 
-      if (dateFilter === 'Today') {
-        matchesDate =
-          saleDate.toDateString() === now.toDateString()
-      } else if (dateFilter === '7 days') {
-        const start = new Date(now)
-        start.setDate(now.getDate() - 7)
+      if (dateFilter === "Today") {
+        matchesDate = saleDate.toDateString() === now.toDateString();
+      } else if (dateFilter === "7 days") {
+        const start = new Date(now);
+        start.setDate(now.getDate() - 7);
 
-        matchesDate = saleDate >= start && saleDate <= now
-      } else if (dateFilter === '30 days') {
-        const start = new Date(now)
-        start.setDate(now.getDate() - 30)
+        matchesDate = saleDate >= start && saleDate <= now;
+      } else if (dateFilter === "30 days") {
+        const start = new Date(now);
+        start.setDate(now.getDate() - 30);
 
-        matchesDate = saleDate >= start && saleDate <= now
+        matchesDate = saleDate >= start && saleDate <= now;
       }
 
-      return matchesSearch && matchesStatus && matchesDate
-    })
-  }, [sales, search, dateFilter, statusFilter])
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [sales, search, dateFilter, statusFilter]);
 
   // ----------------------------------------
   // Date Formatting
   // ----------------------------------------
 
   function formatDate(value) {
-    const date = new Date(value)
+    const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
-      return 'Invalid date'
+      return "Invalid date";
     }
 
-    return new Intl.DateTimeFormat('en-NP', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(date)
+    return new Intl.DateTimeFormat("en-NP", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
   }
 
   // ----------------------------------------
@@ -150,62 +144,60 @@ export default function Sales() {
   // ----------------------------------------
 
   function exportCSV() {
-    if (!canViewSales || filteredSales.length === 0) return
+    if (!canViewSales || filteredSales.length === 0) return;
 
     const headers = [
-      'Invoice',
-      'Date',
-      'Customer',
-      'Items',
-      'Subtotal',
-      'Discount',
-      'VAT',
-      'Total',
-      'Payment Method',
-      'Status',
-    ]
+      "Invoice",
+      "Date",
+      "Customer",
+      "Items",
+      "Subtotal",
+      "Discount",
+      "VAT",
+      "Total",
+      "Payment Method",
+      "Status",
+    ];
 
     const rows = filteredSales.map((sale) => [
       sale.id,
       formatDate(sale.date),
-      sale.customerName || 'Walk-in Customer',
+      sale.customerName || "Walk-in Customer",
       (sale.items || []).reduce(
         (sum, item) => sum + Number(item.quantity || 0),
-        0
+        0,
       ),
       sale.subtotal,
       sale.discountAmount,
       sale.vatAmount,
       sale.total,
-      sale.paymentMethod || 'Cash',
-      sale.status || 'Completed',
-    ])
+      sale.paymentMethod || "Cash",
+      sale.status || "Completed",
+    ]);
 
     const csv = [headers, ...rows]
       .map((row) =>
         row
-          .map((value) =>
-            `"${String(value ?? '').replace(/"/g, '""')}"`
-          )
-          .join(',')
+          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+          .join(","),
       )
-      .join('\n')
+      .join("\n");
 
-    const blob = new Blob(['\uFEFF' + csv], {
-      type: 'text/csv;charset=utf-8;',
-    })
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
-    link.href = url
-    link.download = 'pasalos-sales.csv'
+    link.href = url;
+    link.download = "pasalos-sales.csv";
 
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url);
   }
 
   // ----------------------------------------
@@ -213,8 +205,8 @@ export default function Sales() {
   // ----------------------------------------
 
   function printInvoice() {
-    if (!selectedSale) return
-    window.print()
+    if (!selectedSale) return;
+    window.print();
   }
 
   // ----------------------------------------
@@ -227,30 +219,30 @@ export default function Sales() {
       value: formatCurrency(todayRevenue),
       detail: `${todaySales.length} sale(s) today`,
       icon: TrendingUp,
-      iconStyle: 'bg-emerald-50 text-emerald-600',
+      iconStyle: "bg-emerald-50 text-emerald-600",
     },
     {
-      label: 'Total Revenue',
+      label: "Total Revenue",
       value: formatCurrency(totalRevenue),
-      detail: 'Across recorded sales',
+      detail: "Across recorded sales",
       icon: Wallet,
-      iconStyle: 'bg-blue-50 text-blue-600',
+      iconStyle: "bg-blue-50 text-blue-600",
     },
     {
-      label: 'Total Transactions',
+      label: "Total Transactions",
       value: sales.length.toLocaleString(),
-      detail: 'All recorded invoices',
+      detail: "All recorded invoices",
       icon: Receipt,
-      iconStyle: 'bg-violet-50 text-violet-600',
+      iconStyle: "bg-violet-50 text-violet-600",
     },
     {
-      label: 'Average Sale',
+      label: "Average Sale",
       value: formatCurrency(averageSale),
-      detail: 'Average per transaction',
+      detail: "Average per transaction",
       icon: ShoppingBag,
-      iconStyle: 'bg-amber-50 text-amber-600',
+      iconStyle: "bg-amber-50 text-amber-600",
     },
-  ]
+  ];
 
   // ----------------------------------------
   // Invoice Details
@@ -259,8 +251,8 @@ export default function Sales() {
   if (selectedSale) {
     const itemCount = (selectedSale.items || []).reduce(
       (sum, item) => sum + Number(item.quantity || 0),
-      0
-    )
+      0,
+    );
 
     return (
       <div className="mx-auto max-w-3xl space-y-5">
@@ -308,13 +300,9 @@ export default function Sales() {
 
           <div className="flex flex-col gap-4 border-b border-dashed border-gray-300 pb-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                PasalOS
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">PasalOS</h2>
 
-              <p className="mt-1 text-sm text-gray-500">
-                Sales Invoice
-              </p>
+              <p className="mt-1 text-sm text-gray-500">Sales Invoice</p>
             </div>
 
             <div className="sm:text-right">
@@ -327,7 +315,7 @@ export default function Sales() {
               </p>
 
               <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {selectedSale.status || 'Completed'}
+                {selectedSale.status || "Completed"}
               </span>
             </div>
           </div>
@@ -341,7 +329,7 @@ export default function Sales() {
               </p>
 
               <p className="mt-1 font-semibold text-gray-900">
-                {selectedSale.customerName || 'Walk-in Customer'}
+                {selectedSale.customerName || "Walk-in Customer"}
               </p>
             </div>
 
@@ -351,7 +339,7 @@ export default function Sales() {
               </p>
 
               <p className="mt-1 font-semibold text-gray-900">
-                {selectedSale.paymentMethod || 'Cash'}
+                {selectedSale.paymentMethod || "Cash"}
               </p>
             </div>
           </div>
@@ -373,12 +361,10 @@ export default function Sales() {
                 {(selectedSale.items || []).map((item, index) => (
                   <tr key={item.productId || index}>
                     <td className="py-4 pr-3 font-medium text-gray-900">
-                      {item.name || 'Product'}
+                      {item.name || "Product"}
                     </td>
 
-                    <td className="px-3 py-4 text-right">
-                      {item.quantity}
-                    </td>
+                    <td className="px-3 py-4 text-right">{item.quantity}</td>
 
                     <td className="px-3 py-4 text-right">
                       {formatCurrency(Number(item.price) || 0)}
@@ -387,7 +373,7 @@ export default function Sales() {
                     <td className="py-4 pl-3 text-right font-medium">
                       {formatCurrency(
                         (Number(item.price) || 0) *
-                        (Number(item.quantity) || 0)
+                          (Number(item.quantity) || 0),
                       )}
                     </td>
                   </tr>
@@ -395,10 +381,7 @@ export default function Sales() {
 
                 {(selectedSale.items || []).length === 0 && (
                   <tr>
-                    <td
-                      colSpan={4}
-                      className="py-8 text-center text-gray-500"
-                    >
+                    <td colSpan={4} className="py-8 text-center text-gray-500">
                       No product items found.
                     </td>
                   </tr>
@@ -417,9 +400,7 @@ export default function Sales() {
 
             <div className="flex justify-between gap-4 text-gray-600">
               <span>Subtotal</span>
-              <span>
-                {formatCurrency(Number(selectedSale.subtotal) || 0)}
-              </span>
+              <span>{formatCurrency(Number(selectedSale.subtotal) || 0)}</span>
             </div>
 
             <div className="flex justify-between gap-4 text-gray-600">
@@ -431,16 +412,12 @@ export default function Sales() {
 
             <div className="flex justify-between gap-4 text-gray-600">
               <span>VAT</span>
-              <span>
-                {formatCurrency(Number(selectedSale.vatAmount) || 0)}
-              </span>
+              <span>{formatCurrency(Number(selectedSale.vatAmount) || 0)}</span>
             </div>
 
             <div className="flex justify-between gap-4 border-t border-gray-200 pt-3 text-lg font-bold text-gray-900">
               <span>Total</span>
-              <span>
-                {formatCurrency(Number(selectedSale.total) || 0)}
-              </span>
+              <span>{formatCurrency(Number(selectedSale.total) || 0)}</span>
             </div>
 
             <div className="flex justify-between gap-4 text-gray-600">
@@ -452,9 +429,7 @@ export default function Sales() {
 
             <div className="flex justify-between gap-4 font-semibold text-emerald-700">
               <span>Change</span>
-              <span>
-                {formatCurrency(Number(selectedSale.change) || 0)}
-              </span>
+              <span>{formatCurrency(Number(selectedSale.change) || 0)}</span>
             </div>
           </div>
 
@@ -463,7 +438,7 @@ export default function Sales() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // ----------------------------------------
@@ -476,9 +451,7 @@ export default function Sales() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Sales Management
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Sales Management</h1>
 
           <p className="mt-1 text-sm text-gray-500">
             Track transactions and review completed invoices.
@@ -500,7 +473,7 @@ export default function Sales() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => {
-          const Icon = card.icon
+          const Icon = card.icon;
 
           return (
             <div
@@ -517,9 +490,7 @@ export default function Sales() {
                     {card.value}
                   </p>
 
-                  <p className="mt-1 text-xs text-gray-500">
-                    {card.detail}
-                  </p>
+                  <p className="mt-1 text-xs text-gray-500">{card.detail}</p>
                 </div>
 
                 <div
@@ -529,7 +500,7 @@ export default function Sales() {
                 </div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -593,9 +564,7 @@ export default function Sales() {
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="border-b border-gray-100 px-5 py-4">
-          <h2 className="font-semibold text-gray-900">
-            Sales Transactions
-          </h2>
+          <h2 className="font-semibold text-gray-900">Sales Transactions</h2>
 
           <p className="mt-1 text-xs text-gray-500">
             {filteredSales.length} transaction(s) found
@@ -613,9 +582,7 @@ export default function Sales() {
                 <th className="px-5 py-4 font-semibold">Payment</th>
                 <th className="px-5 py-4 font-semibold">Total</th>
                 <th className="px-5 py-4 font-semibold">Status</th>
-                <th className="px-5 py-4 text-right font-semibold">
-                  Action
-                </th>
+                <th className="px-5 py-4 text-right font-semibold">Action</th>
               </tr>
             </thead>
 
@@ -623,14 +590,11 @@ export default function Sales() {
               {filteredSales.map((sale) => {
                 const itemCount = (sale.items || []).reduce(
                   (sum, item) => sum + Number(item.quantity || 0),
-                  0
-                )
+                  0,
+                );
 
                 return (
-                  <tr
-                    key={sale.id}
-                    className="transition hover:bg-gray-50"
-                  >
+                  <tr key={sale.id} className="transition hover:bg-gray-50">
                     <td className="whitespace-nowrap px-5 py-4 font-semibold text-blue-700">
                       {sale.id}
                     </td>
@@ -640,15 +604,13 @@ export default function Sales() {
                     </td>
 
                     <td className="px-5 py-4 font-medium text-gray-800">
-                      {sale.customerName || 'Walk-in Customer'}
+                      {sale.customerName || "Walk-in Customer"}
                     </td>
 
-                    <td className="px-5 py-4 text-gray-600">
-                      {itemCount}
-                    </td>
+                    <td className="px-5 py-4 text-gray-600">{itemCount}</td>
 
                     <td className="px-5 py-4 text-gray-600">
-                      {sale.paymentMethod || 'Cash'}
+                      {sale.paymentMethod || "Cash"}
                     </td>
 
                     <td className="whitespace-nowrap px-5 py-4 font-semibold text-gray-900">
@@ -658,14 +620,14 @@ export default function Sales() {
                     <td className="px-5 py-4">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          sale.status === 'Completed'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : sale.status === 'Pending'
-                              ? 'bg-amber-50 text-amber-700'
-                              : 'bg-red-50 text-red-700'
+                          sale.status === "Completed"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : sale.status === "Pending"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-red-50 text-red-700"
                         }`}
                       >
-                        {sale.status || 'Completed'}
+                        {sale.status || "Completed"}
                       </span>
                     </td>
 
@@ -681,7 +643,7 @@ export default function Sales() {
                       </button>
                     </td>
                   </tr>
-                )
+                );
               })}
 
               {/* Empty State */}
@@ -689,10 +651,7 @@ export default function Sales() {
               {filteredSales.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-5 py-14 text-center">
-                    <Receipt
-                      size={36}
-                      className="mx-auto mb-3 text-gray-300"
-                    />
+                    <Receipt size={36} className="mx-auto mb-3 text-gray-300" />
 
                     <p className="font-medium text-gray-700">
                       No sales transactions found
@@ -738,5 +697,5 @@ export default function Sales() {
         }
       `}</style>
     </div>
-  )
+  );
 }
