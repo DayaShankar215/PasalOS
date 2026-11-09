@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import {
   Package,
@@ -26,11 +25,7 @@ export default function Products() {
   const { user } = useAuth();
 
   // Permission check
-  const canManageProducts = hasPermission(
-    user?.role,
-    "products",
-    "full"
-  );
+  const canManageProducts = hasPermission(user?.role, "products", "full");
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
@@ -57,13 +52,12 @@ export default function Products() {
 
   // Product summary calculations
   const totalInventoryValue = products.reduce(
-    (total, product) =>
-      total + product.costPrice * product.stock,
-    0
+    (total, product) => total + product.costPrice * product.stock,
+    0,
   );
 
   const lowStockCount = products.filter(
-    (product) => product.stock <= 10
+    (product) => product.stock <= 10,
   ).length;
 
   // Open add product form
@@ -97,8 +91,8 @@ export default function Products() {
         previous.map((product) =>
           product.id === editingProduct.id
             ? { ...product, ...formData }
-            : product
-        )
+            : product,
+        ),
       );
     } else {
       const newProduct = {
@@ -106,10 +100,7 @@ export default function Products() {
         id: Date.now(),
       };
 
-      setProducts((previous) => [
-        newProduct,
-        ...previous,
-      ]);
+      setProducts((previous) => [newProduct, ...previous]);
     }
 
     closeForm();
@@ -127,9 +118,7 @@ export default function Products() {
     if (!canManageProducts) return;
 
     setProducts((previous) =>
-      previous.filter(
-        (product) => product.id !== productId
-      )
+      previous.filter((product) => product.id !== productId),
     );
 
     setDeletingProduct(null);
@@ -163,13 +152,10 @@ export default function Products() {
         product.status,
       ]
         .map(escapeCSV)
-        .join(",")
+        .join(","),
     );
 
-    const csv = [
-      headers.map(escapeCSV).join(","),
-      ...rows,
-    ].join("\r\n");
+    const csv = [headers.map(escapeCSV).join(","), ...rows].join("\r\n");
 
     const blob = new Blob(["\uFEFF", csv], {
       type: "text/csv;charset=utf-8;",
@@ -190,49 +176,33 @@ export default function Products() {
 
   return (
     <div className="products-page">
-
       {/* Page Heading */}
       <div className="page-heading products-heading">
         <div>
-          <div className="eyebrow">
-            INVENTORY MANAGEMENT
-          </div>
+          <div className="eyebrow">INVENTORY MANAGEMENT</div>
 
           <h1>Products</h1>
 
-          <p>
-            Manage your products, pricing, and stock levels.
-          </p>
+          <p>Manage your products, pricing, and stock levels.</p>
         </div>
 
         <div className="products-heading-actions">
-
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={exportCSV}
-          >
+          <button type="button" className="btn-secondary" onClick={exportCSV}>
             <Download size={17} />
             Export CSV
           </button>
 
           {canManageProducts && (
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={openAddForm}
-            >
+            <button type="button" className="btn-primary" onClick={openAddForm}>
               <Plus size={18} />
               Add Product
             </button>
           )}
-
         </div>
       </div>
 
       {/* Product Summary */}
       <div className="product-summary-grid">
-
         <div className="product-summary-card">
           <div className="summary-icon summary-icon-blue">
             <Package size={21} />
@@ -264,11 +234,7 @@ export default function Products() {
 
           <div>
             <p>Categories</p>
-            <h3>
-              {new Set(
-                products.map((product) => product.category)
-              ).size}
-            </h3>
+            <h3>{new Set(products.map((product) => product.category)).size}</h3>
             <span>Categories in use</span>
           </div>
         </div>
@@ -280,25 +246,20 @@ export default function Products() {
 
           <div>
             <p>Stock Cost Value</p>
-            <h3>
-              {formatCurrency(totalInventoryValue)}
-            </h3>
+            <h3>{formatCurrency(totalInventoryValue)}</h3>
             <span>Cost price × stock</span>
           </div>
         </div>
-
       </div>
 
       {/* Products Table */}
       <section className="panel products-panel">
-
         <div className="products-panel-header">
           <div>
             <h2>All Products</h2>
 
             <p>
-              Showing {filteredProducts.length} of{" "}
-              {products.length} products
+              Showing {filteredProducts.length} of {products.length} products
             </p>
           </div>
         </div>
@@ -308,9 +269,7 @@ export default function Products() {
           setSearch={setSearch}
           category={category}
           setCategory={setCategory}
-          categories={productCategories.map(
-            (item) => item.name
-          )}
+          categories={productCategories.map((item) => item.name)}
           onAddProduct={openAddForm}
           canManageProducts={canManageProducts}
         />
@@ -321,7 +280,6 @@ export default function Products() {
           onDelete={openDeleteModal}
           canManageProducts={canManageProducts}
         />
-
       </section>
 
       {/* Add / Edit Product Modal */}
@@ -343,7 +301,6 @@ export default function Products() {
           onClose={() => setDeletingProduct(null)}
         />
       )}
-
     </div>
   );
 }
