@@ -335,4 +335,5 @@ const adjustStock = async (req, res) => {
 module.exports = {
   getStockMovements,
   getStockMovementById,
+  adjustStock,
 }
