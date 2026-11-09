@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from "react";
 import {
   Plus,
   Search,
@@ -12,79 +12,79 @@ import {
   X,
   Filter,
   AlertCircle,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { useExpenses } from '../hooks/useExpenses'
-import { formatCurrency } from '../utils/currency'
+import { useExpenses } from "../hooks/useExpenses";
+import { formatCurrency } from "../utils/currency";
 
 const EXPENSE_CATEGORIES = [
-  'Rent',
-  'Electricity',
-  'Water',
-  'Salaries',
-  'Transportation',
-  'Maintenance',
-  'Internet',
-  'Packaging',
-  'Marketing',
-  'Taxes',
-  'Other',
-]
+  "Rent",
+  "Electricity",
+  "Water",
+  "Salaries",
+  "Transportation",
+  "Maintenance",
+  "Internet",
+  "Packaging",
+  "Marketing",
+  "Taxes",
+  "Other",
+];
 
 const EMPTY_FORM = {
-  title: '',
-  category: 'Other',
-  amount: '',
+  title: "",
+  category: "Other",
+  amount: "",
   date: new Date().toISOString().slice(0, 10),
-  paymentMethod: 'Cash',
-  notes: '',
-}
+  paymentMethod: "Cash",
+  notes: "",
+};
 
 function getCurrentMonth() {
-  return new Date().toISOString().slice(0, 7)
+  return new Date().toISOString().slice(0, 7);
 }
 
 function formatDate(date) {
-  if (!date) return '—'
+  if (!date) return "—";
 
-  return new Date(`${date}T00:00:00`).toLocaleDateString('en-NP', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+  return new Date(`${date}T00:00:00`).toLocaleDateString("en-NP", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function Expenses() {
-  const [expenses, setExpenses] = useExpenses()
+  const [expenses, setExpenses] = useExpenses();
 
-  const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('All')
-  const [monthFilter, setMonthFilter] = useState(getCurrentMonth())
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [monthFilter, setMonthFilter] = useState(getCurrentMonth());
 
-  const [showModal, setShowModal] = useState(false)
-  const [editingExpense, setEditingExpense] = useState(null)
-  const [form, setForm] = useState({ ...EMPTY_FORM })
-  const [error, setError] = useState('')
+  const [showModal, setShowModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [error, setError] = useState("");
 
   // Calculate expense summaries.
-  const currentMonth = getCurrentMonth()
+  const currentMonth = getCurrentMonth();
 
   const totalExpenses = expenses.reduce(
     (total, expense) => total + Number(expense.amount || 0),
-    0
-  )
+    0,
+  );
 
   const currentMonthExpenses = expenses
     .filter((expense) => expense.date?.slice(0, 7) === currentMonth)
-    .reduce((total, expense) => total + Number(expense.amount || 0), 0)
+    .reduce((total, expense) => total + Number(expense.amount || 0), 0);
 
   const currentMonthCount = expenses.filter(
-    (expense) => expense.date?.slice(0, 7) === currentMonth
-  ).length
+    (expense) => expense.date?.slice(0, 7) === currentMonth,
+  ).length;
 
   // Search and filter expenses.
   const filteredExpenses = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = search.trim().toLowerCase();
 
     return expenses
       .filter((expense) => {
@@ -93,95 +93,90 @@ export default function Expenses() {
           expense.title?.toLowerCase().includes(query) ||
           expense.category?.toLowerCase().includes(query) ||
           expense.notes?.toLowerCase().includes(query) ||
-          expense.paymentMethod?.toLowerCase().includes(query)
+          expense.paymentMethod?.toLowerCase().includes(query);
 
         const matchesCategory =
-          categoryFilter === 'All' ||
-          expense.category === categoryFilter
+          categoryFilter === "All" || expense.category === categoryFilter;
 
         const matchesMonth =
-          !monthFilter || expense.date?.slice(0, 7) === monthFilter
+          !monthFilter || expense.date?.slice(0, 7) === monthFilter;
 
-        return matchesSearch && matchesCategory && matchesMonth
+        return matchesSearch && matchesCategory && matchesMonth;
       })
       .sort((a, b) => {
-        const dateComparison = (b.date || '').localeCompare(a.date || '')
+        const dateComparison = (b.date || "").localeCompare(a.date || "");
 
-        if (dateComparison !== 0) return dateComparison
+        if (dateComparison !== 0) return dateComparison;
 
-        return String(b.createdAt || '').localeCompare(
-          String(a.createdAt || '')
-        )
-      })
-  }, [expenses, search, categoryFilter, monthFilter])
+        return String(b.createdAt || "").localeCompare(
+          String(a.createdAt || ""),
+        );
+      });
+  }, [expenses, search, categoryFilter, monthFilter]);
 
   const filteredTotal = filteredExpenses.reduce(
     (total, expense) => total + Number(expense.amount || 0),
-    0
-  )
+    0,
+  );
 
   function updateField(event) {
-    const { name, value } = event.target
+    const { name, value } = event.target;
 
     setForm((currentForm) => ({
       ...currentForm,
       [name]: value,
-    }))
+    }));
   }
 
   function openAddModal() {
-    setEditingExpense(null)
-    setForm({ ...EMPTY_FORM })
-    setError('')
-    setShowModal(true)
+    setEditingExpense(null);
+    setForm({ ...EMPTY_FORM });
+    setError("");
+    setShowModal(true);
   }
 
   function openEditModal(expense) {
-    setEditingExpense(expense)
+    setEditingExpense(expense);
 
     setForm({
-      title: expense.title || '',
-      category: expense.category || 'Other',
-      amount: String(expense.amount ?? ''),
+      title: expense.title || "",
+      category: expense.category || "Other",
+      amount: String(expense.amount ?? ""),
       date: expense.date || new Date().toISOString().slice(0, 10),
-      paymentMethod: expense.paymentMethod || 'Cash',
-      notes: expense.notes || '',
-    })
+      paymentMethod: expense.paymentMethod || "Cash",
+      notes: expense.notes || "",
+    });
 
-    setError('')
-    setShowModal(true)
+    setError("");
+    setShowModal(true);
   }
 
   function closeModal() {
-    setShowModal(false)
-    setEditingExpense(null)
-    setError('')
+    setShowModal(false);
+    setEditingExpense(null);
+    setError("");
   }
 
   function saveExpense(event) {
-    event.preventDefault()
-    setError('')
+    event.preventDefault();
+    setError("");
 
-    const title = form.title.trim()
-    const amount = Number(form.amount)
+    const title = form.title.trim();
+    const amount = Number(form.amount);
 
     if (!title) {
-      setError('Please enter an expense name.')
-      return
+      setError("Please enter an expense name.");
+      return;
     }
 
-    if (
-      form.amount.trim() === '' ||
-      !Number.isFinite(amount) ||
-      amount <= 0
-    ) {
-      setError('Please enter an amount greater than zero.')
-      return
+    if (form.amount.trim() === "" || !Number.isFinite(amount) || amount <= 0) {
+      setError("Please enter an amount greater than zero.");
+      return;
     }
 
     if (!form.date) {
-      setError('Please select an expense date.')
-      return
+      setError("Please select an expense date.");
+      return;
     }
 
     const expenseData = {
@@ -192,7 +187,7 @@ export default function Expenses() {
       paymentMethod: form.paymentMethod,
       notes: form.notes.trim(),
       updatedAt: new Date().toISOString(),
-    }
+    };
 
     if (editingExpense) {
       setExpenses((currentExpenses) =>
@@ -202,46 +197,43 @@ export default function Expenses() {
                 ...expense,
                 ...expenseData,
               }
-            : expense
-        )
-      )
+            : expense,
+        ),
+      );
     } else {
       const newExpense = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         ...expenseData,
         createdAt: new Date().toISOString(),
-      }
+      };
 
-      setExpenses((currentExpenses) => [
-        newExpense,
-        ...currentExpenses,
-      ])
+      setExpenses((currentExpenses) => [newExpense, ...currentExpenses]);
     }
 
-    closeModal()
+    closeModal();
   }
 
   function deleteExpense(expense) {
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${expense.title}"?`
-    )
+      `Are you sure you want to delete "${expense.title}"?`,
+    );
 
-    if (!confirmed) return
+    if (!confirmed) return;
 
     setExpenses((currentExpenses) =>
-      currentExpenses.filter((item) => item.id !== expense.id)
-    )
+      currentExpenses.filter((item) => item.id !== expense.id),
+    );
   }
 
   function exportCSV() {
     const headers = [
-      'Expense Name',
-      'Category',
-      'Amount (NPR)',
-      'Date',
-      'Payment Method',
-      'Notes',
-    ]
+      "Expense Name",
+      "Category",
+      "Amount (NPR)",
+      "Date",
+      "Payment Method",
+      "Notes",
+    ];
 
     const rows = filteredExpenses.map((expense) => [
       expense.title,
@@ -249,72 +241,69 @@ export default function Expenses() {
       expense.amount,
       expense.date,
       expense.paymentMethod,
-      expense.notes || '',
-    ])
+      expense.notes || "",
+    ]);
 
-    const escapeCSV = (value) =>
-      `"${String(value ?? '').replace(/"/g, '""')}"`
+    const escapeCSV = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
     const csv = [headers, ...rows]
-      .map((row) => row.map(escapeCSV).join(','))
-      .join('\n')
+      .map((row) => row.map(escapeCSV).join(","))
+      .join("\n");
 
-    const blob = new Blob(['\uFEFF' + csv], {
-      type: 'text/csv;charset=utf-8;',
-    })
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
-    link.href = url
-    link.download = 'pasalos-expenses.csv'
+    link.href = url;
+    link.download = "pasalos-expenses.csv";
 
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-    URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url);
   }
 
   const summaryCards = [
     {
-      title: 'All-Time Expenses',
+      title: "All-Time Expenses",
       value: formatCurrency(totalExpenses),
-      description: 'Total recorded expenses',
+      description: "Total recorded expenses",
       icon: Wallet,
-      iconStyle: 'bg-blue-100 text-blue-700',
+      iconStyle: "bg-blue-100 text-blue-700",
     },
     {
-      title: 'This Month',
+      title: "This Month",
       value: formatCurrency(currentMonthExpenses),
-      description: 'Expenses recorded this month',
+      description: "Expenses recorded this month",
       icon: TrendingUp,
-      iconStyle: 'bg-emerald-100 text-emerald-700',
+      iconStyle: "bg-emerald-100 text-emerald-700",
     },
     {
-      title: 'Monthly Records',
+      title: "Monthly Records",
       value: currentMonthCount,
-      description: 'Expenses this month',
+      description: "Expenses this month",
       icon: CalendarDays,
-      iconStyle: 'bg-violet-100 text-violet-700',
+      iconStyle: "bg-violet-100 text-violet-700",
     },
     {
-      title: 'Filtered Total',
+      title: "Filtered Total",
       value: formatCurrency(filteredTotal),
-      description: 'Based on your current filters',
+      description: "Based on your current filters",
       icon: Receipt,
-      iconStyle: 'bg-amber-100 text-amber-700',
+      iconStyle: "bg-amber-100 text-amber-700",
     },
-  ]
+  ];
 
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Page heading */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Expenses
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
 
           <p className="mt-1 text-sm text-gray-500">
             Track and manage your business expenses in one place.
@@ -334,7 +323,7 @@ export default function Expenses() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => {
-          const Icon = card.icon
+          const Icon = card.icon;
 
           return (
             <div
@@ -343,9 +332,7 @@ export default function Expenses() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm text-gray-500">
-                    {card.title}
-                  </p>
+                  <p className="text-sm text-gray-500">{card.title}</p>
 
                   <p className="mt-2 text-xl font-bold text-gray-900">
                     {card.value}
@@ -361,7 +348,7 @@ export default function Expenses() {
                 </div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -390,9 +377,7 @@ export default function Expenses() {
 
               <select
                 value={categoryFilter}
-                onChange={(event) =>
-                  setCategoryFilter(event.target.value)
-                }
+                onChange={(event) => setCategoryFilter(event.target.value)}
                 className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
               >
                 <option value="All">All Categories</option>
@@ -416,9 +401,9 @@ export default function Expenses() {
             <button
               type="button"
               onClick={() => {
-                setSearch('')
-                setCategoryFilter('All')
-                setMonthFilter('')
+                setSearch("");
+                setCategoryFilter("All");
+                setMonthFilter("");
               }}
               className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
@@ -441,38 +426,23 @@ export default function Expenses() {
           <table className="w-full min-w-200 text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
-                <th className="px-5 py-4 font-semibold">
-                  Expense
-                </th>
+                <th className="px-5 py-4 font-semibold">Expense</th>
 
-                <th className="px-5 py-4 font-semibold">
-                  Category
-                </th>
+                <th className="px-5 py-4 font-semibold">Category</th>
 
-                <th className="px-5 py-4 font-semibold">
-                  Date
-                </th>
+                <th className="px-5 py-4 font-semibold">Date</th>
 
-                <th className="px-5 py-4 font-semibold">
-                  Payment
-                </th>
+                <th className="px-5 py-4 font-semibold">Payment</th>
 
-                <th className="px-5 py-4 text-right font-semibold">
-                  Amount
-                </th>
+                <th className="px-5 py-4 text-right font-semibold">Amount</th>
 
-                <th className="px-5 py-4 text-right font-semibold">
-                  Actions
-                </th>
+                <th className="px-5 py-4 text-right font-semibold">Actions</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-gray-100">
               {filteredExpenses.map((expense) => (
-                <tr
-                  key={expense.id}
-                  className="transition hover:bg-gray-50"
-                >
+                <tr key={expense.id} className="transition hover:bg-gray-50">
                   <td className="px-5 py-4">
                     <p className="font-semibold text-gray-900">
                       {expense.title}
@@ -532,10 +502,7 @@ export default function Expenses() {
                   <td colSpan="6" className="px-5 py-14 text-center">
                     <div className="mx-auto flex max-w-sm flex-col items-center">
                       <div className="rounded-full bg-gray-100 p-4">
-                        <Receipt
-                          size={28}
-                          className="text-gray-400"
-                        />
+                        <Receipt size={28} className="text-gray-400" />
                       </div>
 
                       <p className="mt-4 font-semibold text-gray-800">
@@ -574,7 +541,7 @@ export default function Expenses() {
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">
-                  {editingExpense ? 'Edit Expense' : 'Add Expense'}
+                  {editingExpense ? "Edit Expense" : "Add Expense"}
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-500">
@@ -722,7 +689,7 @@ export default function Expenses() {
                   type="submit"
                   className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700"
                 >
-                  {editingExpense ? 'Update Expense' : 'Save Expense'}
+                  {editingExpense ? "Update Expense" : "Save Expense"}
                 </button>
               </div>
             </form>
@@ -730,5 +697,5 @@ export default function Expenses() {
         </div>
       )}
     </div>
-  )
+  );
 }
