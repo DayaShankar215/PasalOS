@@ -1,49 +1,58 @@
 import {
   createContext,
   createElement,
+  useCallback,
   useContext,
   useEffect,
   useState,
 } from 'react'
 
-const STORAGE_KEY = 'pasalos-stock-movements'
+import { getStockMovements } from '../services/inventoryService'
 
 const StockMovementsContext = createContext(null)
 
-function loadStockMovements() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-
-    if (!saved) {
-      return []
-    }
-
-    const parsed = JSON.parse(saved)
-
-    return Array.isArray(parsed) ? parsed : []
-  } catch (error) {
-    console.error('Failed to load stock movements:', error)
-    return []
-  }
-}
-
 export function StockMovementsProvider({ children }) {
-  const [movements, setMovements] = useState(loadStockMovements)
+  const [movements, setMovements] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const refreshMovements = useCallback(async (filters = {}) => {
+    try {
+      setLoading(true)
+      setError('')
+
+      const data = await getStockMovements(filters)
+
+      setMovements(data)
+      return data
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        'Failed to load stock movements.'
+
+      setError(message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(movements)
-      )
-    } catch (error) {
-      console.error('Failed to save stock movements:', error)
-    }
-  }, [movements])
+    refreshMovements().catch(() => {
+      // Error is stored in context for the UI.
+    })
+  }, [refreshMovements])
+
+  const value = {
+    movements,
+    loading,
+    error,
+    refreshMovements,
+  }
 
   return createElement(
     StockMovementsContext.Provider,
-    { value: [movements, setMovements] },
+    { value },
     children
   )
 }
