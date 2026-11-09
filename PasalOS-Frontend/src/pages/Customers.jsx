@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from "react";
 import {
   Users,
   Search,
@@ -12,81 +11,71 @@ import {
   Mail,
   X,
   ShieldAlert,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { useCustomers } from '../hooks/useCustomers'
-import { useAuth } from '../context/AuthContext'
-import { hasPermission } from '../utils/permissions'
+import { useCustomers } from "../hooks/useCustomers";
+import { useAuth } from "../context/AuthContext";
+import { hasPermission } from "../utils/permissions";
 
 const emptyForm = {
-  name: '',
-  phone: '',
-  email: '',
-  address: '',
-}
+  name: "",
+  phone: "",
+  email: "",
+  address: "",
+};
 
 export default function Customers() {
-  const [customers, setCustomers] = useCustomers()
+  const [customers, setCustomers] = useCustomers();
 
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   // ----------------------------------------
   // Role-Based Permissions
   // ----------------------------------------
 
-  const canViewCustomers = hasPermission(
-    user?.role,
-    'customers',
-    'view'
-  )
+  const canViewCustomers = hasPermission(user?.role, "customers", "view");
 
-  const canManageCustomers = hasPermission(
-    user?.role,
-    'customers',
-    'full'
-  )
+  const canManageCustomers = hasPermission(user?.role, "customers", "full");
 
   // ----------------------------------------
   // Component States
   // ----------------------------------------
 
-  const [search, setSearch] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [form, setForm] = useState(emptyForm)
-  const [error, setError] = useState('')
-  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // ----------------------------------------
   // Search and Filter Customers
   // ----------------------------------------
 
   const filteredCustomers = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = search.trim().toLowerCase();
 
     return customers.filter((customer) =>
-      [
-        customer.name,
-        customer.phone,
-        customer.email,
-        customer.address,
-      ].some((value) =>
-        String(value || '').toLowerCase().includes(query)
-      )
-    )
-  }, [customers, search])
+      [customer.name, customer.phone, customer.email, customer.address].some(
+        (value) =>
+          String(value || "")
+            .toLowerCase()
+            .includes(query),
+      ),
+    );
+  }, [customers, search]);
 
   // ----------------------------------------
   // Add Customer
   // ----------------------------------------
 
   function openAddForm() {
-    if (!canManageCustomers) return
+    if (!canManageCustomers) return;
 
-    setEditingId(null)
-    setForm({ ...emptyForm })
-    setError('')
-    setShowForm(true)
+    setEditingId(null);
+    setForm({ ...emptyForm });
+    setError("");
+    setShowForm(true);
   }
 
   // ----------------------------------------
@@ -94,19 +83,19 @@ export default function Customers() {
   // ----------------------------------------
 
   function openEditForm(customer) {
-    if (!canManageCustomers) return
+    if (!canManageCustomers) return;
 
-    setEditingId(customer.id)
+    setEditingId(customer.id);
 
     setForm({
-      name: customer.name || '',
-      phone: customer.phone || '',
-      email: customer.email || '',
-      address: customer.address || '',
-    })
+      name: customer.name || "",
+      phone: customer.phone || "",
+      email: customer.email || "",
+      address: customer.address || "",
+    });
 
-    setError('')
-    setShowForm(true)
+    setError("");
+    setShowForm(true);
   }
 
   // ----------------------------------------
@@ -114,10 +103,10 @@ export default function Customers() {
   // ----------------------------------------
 
   function closeForm() {
-    setShowForm(false)
-    setEditingId(null)
-    setForm({ ...emptyForm })
-    setError('')
+    setShowForm(false);
+    setEditingId(null);
+    setForm({ ...emptyForm });
+    setError("");
   }
 
   // ----------------------------------------
@@ -125,12 +114,12 @@ export default function Customers() {
   // ----------------------------------------
 
   function handleChange(event) {
-    const { name, value } = event.target
+    const { name, value } = event.target;
 
     setForm((previous) => ({
       ...previous,
       [name]: value,
-    }))
+    }));
   }
 
   // ----------------------------------------
@@ -138,52 +127,54 @@ export default function Customers() {
   // ----------------------------------------
 
   function handleSubmit(event) {
-    event.preventDefault()
+    event.preventDefault();
 
-    if (!canManageCustomers) return
+    if (!canManageCustomers) return;
 
-    const name = form.name.trim()
-    const phone = form.phone.trim()
-    const email = form.email.trim()
-    const address = form.address.trim()
+    const name = form.name.trim();
+    const phone = form.phone.trim();
+    const email = form.email.trim();
+    const address = form.address.trim();
 
     // Required field validation
 
     if (!name) {
-      setError('Please enter the customer name.')
-      return
+      setError("Please enter the customer name.");
+      return;
     }
 
     if (!phone) {
-      setError('Please enter the customer phone number.')
-      return
+      setError("Please enter the customer phone number.");
+      return;
     }
 
     // Duplicate phone validation
 
     const duplicatePhone = customers.some(
       (customer) =>
-        String(customer.phone || '').trim() === phone &&
-        customer.id !== editingId
-    )
+        String(customer.phone || "").trim() === phone &&
+        customer.id !== editingId,
+    );
 
     if (duplicatePhone) {
-      setError('A customer with this phone number already exists.')
-      return
+      setError("A customer with this phone number already exists.");
+      return;
     }
 
     // Duplicate email validation
 
-    const duplicateEmail = email && customers.some(
-      (customer) =>
-        String(customer.email || '').trim().toLowerCase() ===
-          email.toLowerCase() &&
-        customer.id !== editingId
-    )
+    const duplicateEmail =
+      email &&
+      customers.some(
+        (customer) =>
+          String(customer.email || "")
+            .trim()
+            .toLowerCase() === email.toLowerCase() && customer.id !== editingId,
+      );
 
     if (duplicateEmail) {
-      setError('A customer with this email already exists.')
-      return
+      setError("A customer with this email already exists.");
+      return;
     }
 
     // Update existing customer
@@ -199,9 +190,9 @@ export default function Customers() {
                 email,
                 address,
               }
-            : customer
-        )
-      )
+            : customer,
+        ),
+      );
     } else {
       // Create new customer
 
@@ -212,15 +203,12 @@ export default function Customers() {
         email,
         address,
         createdAt: new Date().toISOString(),
-      }
+      };
 
-      setCustomers((previous) => [
-        newCustomer,
-        ...previous,
-      ])
+      setCustomers((previous) => [newCustomer, ...previous]);
     }
 
-    closeForm()
+    closeForm();
   }
 
   // ----------------------------------------
@@ -228,15 +216,13 @@ export default function Customers() {
   // ----------------------------------------
 
   function deleteCustomer() {
-    if (!canManageCustomers || !deleteTarget) return
+    if (!canManageCustomers || !deleteTarget) return;
 
     setCustomers((previous) =>
-      previous.filter(
-        (customer) => customer.id !== deleteTarget.id
-      )
-    )
+      previous.filter((customer) => customer.id !== deleteTarget.id),
+    );
 
-    setDeleteTarget(null)
+    setDeleteTarget(null);
   }
 
   // ----------------------------------------
@@ -244,15 +230,9 @@ export default function Customers() {
   // ----------------------------------------
 
   function exportCSV() {
-    if (!canViewCustomers || filteredCustomers.length === 0) return
+    if (!canViewCustomers || filteredCustomers.length === 0) return;
 
-    const headers = [
-      'Customer ID',
-      'Name',
-      'Phone',
-      'Email',
-      'Address',
-    ]
+    const headers = ["Customer ID", "Name", "Phone", "Email", "Address"];
 
     const rows = filteredCustomers.map((customer) => [
       customer.id,
@@ -260,33 +240,31 @@ export default function Customers() {
       customer.phone,
       customer.email,
       customer.address,
-    ])
+    ]);
 
     const csv = [headers, ...rows]
       .map((row) =>
         row
-          .map((value) =>
-            `"${String(value ?? '').replace(/"/g, '""')}"`
-          )
-          .join(',')
+          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+          .join(","),
       )
-      .join('\n')
+      .join("\n");
 
-    const blob = new Blob(['\uFEFF' + csv], {
-      type: 'text/csv;charset=utf-8;',
-    })
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
-    link.href = url
-    link.download = 'pasalos-customers.csv'
+    link.href = url;
+    link.download = "pasalos-customers.csv";
 
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url);
   }
 
   // ----------------------------------------
@@ -295,28 +273,26 @@ export default function Customers() {
 
   const stats = [
     {
-      label: 'Total Customers',
+      label: "Total Customers",
       value: customers.length,
       icon: Users,
-      style: 'bg-blue-50 text-blue-600',
+      style: "bg-blue-50 text-blue-600",
     },
     {
-      label: 'With Email',
-      value: customers.filter(
-        (customer) => String(customer.email || '').trim()
-      ).length,
+      label: "With Email",
+      value: customers.filter((customer) => String(customer.email || "").trim())
+        .length,
       icon: Mail,
-      style: 'bg-violet-50 text-violet-600',
+      style: "bg-violet-50 text-violet-600",
     },
     {
-      label: 'With Phone',
-      value: customers.filter(
-        (customer) => String(customer.phone || '').trim()
-      ).length,
+      label: "With Phone",
+      value: customers.filter((customer) => String(customer.phone || "").trim())
+        .length,
       icon: Phone,
-      style: 'bg-emerald-50 text-emerald-600',
+      style: "bg-emerald-50 text-emerald-600",
     },
-  ]
+  ];
 
   // ----------------------------------------
   // Access Restricted
@@ -335,12 +311,12 @@ export default function Customers() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-gray-500">
-            You do not have permission to view customer records.
-            Please contact your shop administrator if you need access.
+            You do not have permission to view customer records. Please contact
+            your shop administrator if you need access.
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // ----------------------------------------
@@ -349,7 +325,6 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-
       {/* Page Heading */}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -364,7 +339,6 @@ export default function Customers() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-
           {/* Export Button */}
 
           <button
@@ -396,7 +370,7 @@ export default function Customers() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {stats.map((stat) => {
-          const Icon = stat.icon
+          const Icon = stat.icon;
 
           return (
             <div
@@ -404,9 +378,7 @@ export default function Customers() {
               className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
             >
               <div>
-                <p className="text-sm text-gray-500">
-                  {stat.label}
-                </p>
+                <p className="text-sm text-gray-500">{stat.label}</p>
 
                 <p className="mt-2 text-2xl font-bold text-gray-900">
                   {stat.value}
@@ -417,7 +389,7 @@ export default function Customers() {
                 <Icon size={22} />
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -444,9 +416,7 @@ export default function Customers() {
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="border-b border-gray-100 px-5 py-4">
-          <h2 className="font-semibold text-gray-900">
-            Customer Directory
-          </h2>
+          <h2 className="font-semibold text-gray-900">Customer Directory</h2>
 
           <p className="mt-1 text-xs text-gray-500">
             {filteredCustomers.length} customer(s) found
@@ -463,19 +433,14 @@ export default function Customers() {
                 <th className="px-5 py-4">Address</th>
 
                 {canManageCustomers && (
-                  <th className="px-5 py-4 text-right">
-                    Actions
-                  </th>
+                  <th className="px-5 py-4 text-right">Actions</th>
                 )}
               </tr>
             </thead>
 
             <tbody className="divide-y divide-gray-100">
               {filteredCustomers.map((customer) => (
-                <tr
-                  key={customer.id}
-                  className="transition hover:bg-gray-50"
-                >
+                <tr key={customer.id} className="transition hover:bg-gray-50">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
@@ -484,7 +449,7 @@ export default function Customers() {
 
                       <div>
                         <p className="font-semibold text-gray-900">
-                          {customer.name || 'Unnamed Customer'}
+                          {customer.name || "Unnamed Customer"}
                         </p>
 
                         <p className="mt-1 text-xs text-gray-400">
@@ -495,15 +460,15 @@ export default function Customers() {
                   </td>
 
                   <td className="whitespace-nowrap px-5 py-4 text-gray-600">
-                    {customer.phone || '—'}
+                    {customer.phone || "—"}
                   </td>
 
                   <td className="px-5 py-4 text-gray-600">
-                    {customer.email || '—'}
+                    {customer.email || "—"}
                   </td>
 
                   <td className="px-5 py-4 text-gray-600">
-                    {customer.address || '—'}
+                    {customer.address || "—"}
                   </td>
 
                   {/* Customer Actions */}
@@ -511,7 +476,6 @@ export default function Customers() {
                   {canManageCustomers && (
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
-
                         <button
                           type="button"
                           onClick={() => openEditForm(customer)}
@@ -529,7 +493,6 @@ export default function Customers() {
                         >
                           <Trash2 size={16} />
                         </button>
-
                       </div>
                     </td>
                   )}
@@ -544,10 +507,7 @@ export default function Customers() {
                     colSpan={canManageCustomers ? 5 : 4}
                     className="px-5 py-14 text-center"
                   >
-                    <Users
-                      size={36}
-                      className="mx-auto mb-3 text-gray-300"
-                    />
+                    <Users size={36} className="mx-auto mb-3 text-gray-300" />
 
                     <p className="font-medium text-gray-700">
                       No customers found
@@ -555,8 +515,8 @@ export default function Customers() {
 
                     <p className="mt-1 text-sm text-gray-500">
                       {search
-                        ? 'Try adjusting your search.'
-                        : 'Add a customer to get started.'}
+                        ? "Try adjusting your search."
+                        : "Add a customer to get started."}
                     </p>
                   </td>
                 </tr>
@@ -571,13 +531,12 @@ export default function Customers() {
       {canManageCustomers && showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-auto w-full max-w-lg rounded-2xl bg-white shadow-xl">
-
             {/* Modal Header */}
 
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">
-                  {editingId ? 'Edit Customer' : 'Add Customer'}
+                  {editingId ? "Edit Customer" : "Add Customer"}
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-500">
@@ -598,7 +557,6 @@ export default function Customers() {
             {/* Customer Form */}
 
             <form onSubmit={handleSubmit} className="space-y-4 p-6">
-
               {/* Customer Name */}
 
               <div>
@@ -695,10 +653,9 @@ export default function Customers() {
                   type="submit"
                   className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
                 >
-                  {editingId ? 'Save Changes' : 'Add Customer'}
+                  {editingId ? "Save Changes" : "Add Customer"}
                 </button>
               </div>
-
             </form>
           </div>
         </div>
@@ -709,7 +666,6 @@ export default function Customers() {
       {canManageCustomers && deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
               <Trash2 size={22} />
             </div>
@@ -719,7 +675,7 @@ export default function Customers() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-gray-500">
-              Are you sure you want to delete{' '}
+              Are you sure you want to delete{" "}
               <span className="font-semibold text-gray-800">
                 {deleteTarget.name}
               </span>
@@ -743,11 +699,9 @@ export default function Customers() {
                 Delete
               </button>
             </div>
-
           </div>
         </div>
       )}
-
     </div>
-  )
+  );
 }
