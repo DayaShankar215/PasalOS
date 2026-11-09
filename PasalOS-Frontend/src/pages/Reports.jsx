@@ -68,7 +68,7 @@ const getAmount = (record) =>
       record?.totalAmount ??
       record?.grandTotal ??
       record?.amount ??
-      record?.subtotal
+      record?.subtotal,
   );
 
 const isCancelled = (record) =>
@@ -82,10 +82,7 @@ const getItemPrice = (item) =>
 
 const getItemCost = (item) =>
   toNumber(
-    item?.costPrice ??
-      item?.purchasePrice ??
-      item?.unitCost ??
-      item?.cost
+    item?.costPrice ?? item?.purchasePrice ?? item?.unitCost ?? item?.cost,
   );
 
 const getSaleItems = (sale) =>
@@ -116,8 +113,7 @@ const getLocalDateString = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-const escapeCsv = (value) =>
-  `"${String(value ?? "").replace(/"/g, '""')}"`;
+const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
 const downloadCsv = (filename, rows) => {
   if (!rows.length) {
@@ -148,9 +144,7 @@ function StatCard({ title, value, subtitle, icon: Icon, color }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-gray-500">{title}</p>
-          <h3 className="mt-2 text-2xl font-bold text-gray-900">
-            {value}
-          </h3>
+          <h3 className="mt-2 text-2xl font-bold text-gray-900">{value}</h3>
           <p className="mt-2 text-xs text-gray-500">{subtitle}</p>
         </div>
 
@@ -191,9 +185,7 @@ export default function Reports() {
 
   const [period, setPeriod] = useState("30");
   const [customStart, setCustomStart] = useState(
-    getLocalDateString(
-      new Date(Date.now() - 29 * 24 * 60 * 60 * 1000)
-    )
+    getLocalDateString(new Date(Date.now() - 29 * 24 * 60 * 60 * 1000)),
   );
   const [customEnd, setCustomEnd] = useState(getLocalDateString(new Date()));
 
@@ -241,38 +233,37 @@ export default function Reports() {
   const filteredSales = useMemo(
     () =>
       (Array.isArray(sales) ? sales : []).filter(
-        (sale) => !isCancelled(sale) && isInRange(sale)
+        (sale) => !isCancelled(sale) && isInRange(sale),
       ),
-    [sales, dateRange]
+    [sales, dateRange],
   );
 
   const filteredPurchases = useMemo(
     () =>
       (Array.isArray(purchases) ? purchases : []).filter(
-        (purchase) => !isCancelled(purchase) && isInRange(purchase)
+        (purchase) => !isCancelled(purchase) && isInRange(purchase),
       ),
-    [purchases, dateRange]
+    [purchases, dateRange],
   );
 
   const filteredExpenses = useMemo(
-    () =>
-      (Array.isArray(expenses) ? expenses : []).filter(isInRange),
-    [expenses, dateRange]
+    () => (Array.isArray(expenses) ? expenses : []).filter(isInRange),
+    [expenses, dateRange],
   );
 
   const totalSales = filteredSales.reduce(
     (sum, sale) => sum + getAmount(sale),
-    0
+    0,
   );
 
   const totalPurchases = filteredPurchases.reduce(
     (sum, purchase) => sum + getAmount(purchase),
-    0
+    0,
   );
 
   const totalExpenses = filteredExpenses.reduce(
     (sum, expense) => sum + getAmount(expense),
-    0
+    0,
   );
 
   const averageSale =
@@ -281,7 +272,7 @@ export default function Reports() {
   const lowStockCount = (Array.isArray(products) ? products : []).filter(
     (product) =>
       toNumber(product?.stock ?? product?.quantity) <=
-      toNumber(product?.lowStockThreshold ?? product?.minStock ?? 5)
+      toNumber(product?.lowStockThreshold ?? product?.minStock ?? 5),
   ).length;
 
   // Match sale-item costs to the current product catalogue when possible.
@@ -289,13 +280,8 @@ export default function Reports() {
   const productCosts = new Map(
     (Array.isArray(products) ? products : []).map((product) => [
       String(product.id),
-      toNumber(
-        product.costPrice ??
-          product.purchasePrice ??
-          product.cost ??
-          0
-      ),
-    ])
+      toNumber(product.costPrice ?? product.purchasePrice ?? product.cost ?? 0),
+    ]),
   );
 
   const estimatedCostOfGoods = filteredSales.reduce((sum, sale) => {
@@ -315,8 +301,7 @@ export default function Reports() {
   }, 0);
 
   const estimatedGrossProfit = totalSales - estimatedCostOfGoods;
-  const estimatedNetResult =
-    estimatedGrossProfit - totalExpenses;
+  const estimatedNetResult = estimatedGrossProfit - totalExpenses;
 
   const chartData = useMemo(() => {
     if (!dateRange.valid) return [];
@@ -327,7 +312,7 @@ export default function Reports() {
 
     // Limit the daily chart to the latest 90 days for readability.
     const daysDifference = Math.ceil(
-      (last.getTime() - current.getTime()) / (24 * 60 * 60 * 1000)
+      (last.getTime() - current.getTime()) / (24 * 60 * 60 * 1000),
     );
 
     if (daysDifference > 90) {
@@ -367,12 +352,7 @@ export default function Reports() {
     addRecords(filteredExpenses, "expenses");
 
     return Array.from(dayMap.values());
-  }, [
-    dateRange,
-    filteredSales,
-    filteredPurchases,
-    filteredExpenses,
-  ]);
+  }, [dateRange, filteredSales, filteredPurchases, filteredExpenses]);
 
   const expenseBreakdown = useMemo(() => {
     const categories = new Map();
@@ -381,7 +361,7 @@ export default function Reports() {
       const category = expense.category || "Other";
       categories.set(
         category,
-        (categories.get(category) || 0) + getAmount(expense)
+        (categories.get(category) || 0) + getAmount(expense),
       );
     });
 
@@ -397,10 +377,7 @@ export default function Reports() {
     filteredPurchases.forEach((purchase) => {
       const status = purchase.status || "Unknown";
 
-      statuses.set(
-        status,
-        (statuses.get(status) || 0) + getAmount(purchase)
-      );
+      statuses.set(status, (statuses.get(status) || 0) + getAmount(purchase));
     });
 
     return Array.from(statuses, ([name, value]) => ({
@@ -441,9 +418,7 @@ export default function Reports() {
   const handleReset = () => {
     setPeriod("30");
     setCustomStart(
-      getLocalDateString(
-        new Date(Date.now() - 29 * 24 * 60 * 60 * 1000)
-      )
+      getLocalDateString(new Date(Date.now() - 29 * 24 * 60 * 60 * 1000)),
     );
     setCustomEnd(getLocalDateString(new Date()));
   };
@@ -480,7 +455,8 @@ export default function Reports() {
           </div>
 
           <p className="mt-2 text-sm text-gray-500">
-            Understand your sales, purchases, expenses, and business performance.
+            Understand your sales, purchases, expenses, and business
+            performance.
           </p>
         </div>
 
@@ -628,14 +604,10 @@ export default function Reports() {
           </div>
 
           <div className="rounded-xl bg-emerald-50 p-4">
-            <p className="text-sm text-emerald-700">
-              Estimated Gross Profit
-            </p>
+            <p className="text-sm text-emerald-700">Estimated Gross Profit</p>
             <p
               className={`mt-2 text-xl font-bold ${
-                estimatedGrossProfit < 0
-                  ? "text-red-700"
-                  : "text-emerald-900"
+                estimatedGrossProfit < 0 ? "text-red-700" : "text-emerald-900"
               }`}
             >
               {formatCurrency(estimatedGrossProfit)}
@@ -649,7 +621,8 @@ export default function Reports() {
               Estimated result after recorded expenses
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Gross profit minus recorded expenses; excludes other unrecorded costs.
+              Gross profit minus recorded expenses; excludes other unrecorded
+              costs.
             </p>
           </div>
 
@@ -664,9 +637,9 @@ export default function Reports() {
 
         <p className="mt-3 text-xs leading-5 text-gray-500">
           Note: Product costs are estimated using the cost saved on sale items
-          or the current product catalogue. If no cost is available, that
-          item's cost is treated as zero. Historical profit may therefore
-          differ from actual profit.
+          or the current product catalogue. If no cost is available, that item's
+          cost is treated as zero. Historical profit may therefore differ from
+          actual profit.
         </p>
       </section>
 
@@ -675,9 +648,7 @@ export default function Reports() {
         title="Business Activity"
         subtitle="Daily sales, purchases, and expenses for the selected period"
       >
-        {chartData.some(
-          (row) => row.sales || row.purchases || row.expenses
-        ) ? (
+        {chartData.some((row) => row.sales || row.purchases || row.expenses) ? (
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
@@ -805,9 +776,7 @@ export default function Reports() {
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="flex flex-col justify-between gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center">
           <div>
-            <h2 className="font-semibold text-gray-900">
-              Report Summary
-            </h2>
+            <h2 className="font-semibold text-gray-900">Report Summary</h2>
             <p className="mt-1 text-sm text-gray-500">
               Totals for the selected reporting period
             </p>
@@ -834,9 +803,7 @@ export default function Reports() {
 
             <tbody className="divide-y divide-gray-100">
               <tr>
-                <td className="px-5 py-4 font-medium text-gray-800">
-                  Sales
-                </td>
+                <td className="px-5 py-4 font-medium text-gray-800">Sales</td>
                 <td className="px-5 py-4 text-gray-600">
                   {filteredSales.length}
                 </td>
@@ -904,9 +871,9 @@ export default function Reports() {
             Report data is stored locally
           </h3>
           <p className="mt-1 text-sm leading-6 text-blue-800">
-            These reports use the data currently saved by your PasalOS
-            frontend. Once the Node.js and MySQL backend is connected, the
-            reporting module can be upgraded to use centralized business data.
+            These reports use the data currently saved by your PasalOS frontend.
+            Once the Node.js and MySQL backend is connected, the reporting
+            module can be upgraded to use centralized business data.
           </p>
         </div>
       </div>
