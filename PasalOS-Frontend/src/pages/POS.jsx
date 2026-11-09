@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from "react";
 import {
   Search,
   ShoppingCart,
@@ -11,82 +10,83 @@ import {
   CheckCircle2,
   Printer,
   X,
-} from 'lucide-react'
-import { useProducts } from '../hooks/useProducts'
-import { useCustomers } from '../hooks/useCustomers'
-import { useSales } from '../hooks/useSales'
-import { formatCurrency } from '../utils/currency'
-import { useStockMovements } from '../hooks/useStockMovements'
+} from "lucide-react";
+import { useProducts } from "../hooks/useProducts";
+import { useCustomers } from "../hooks/useCustomers";
+import { useSales } from "../hooks/useSales";
+import { formatCurrency } from "../utils/currency";
+import { useStockMovements } from "../hooks/useStockMovements";
 
-const VAT_RATE = 0.13
+const VAT_RATE = 0.13;
 
 export default function POS() {
-  const [products, setProducts] = useProducts()
-  const [sales, setSales] = useSales()
-  const [, setMovements] = useStockMovements()
-  const [customers] = useCustomers()
-  const [selectedCustomerId, setSelectedCustomerId] = useState('')
-  const [search, setSearch] = useState('')
-  const [cart, setCart] = useState([])
-  const [discountPercent, setDiscountPercent] = useState('0')
-  const [applyVat, setApplyVat] = useState(false)
-  const [cashReceived, setCashReceived] = useState('')
-  const [error, setError] = useState('')
-  const [completedSale, setCompletedSale] = useState(null)
+  const [products, setProducts] = useProducts();
+  const [sales, setSales] = useSales();
+  const [, setMovements] = useStockMovements();
+  const [customers] = useCustomers();
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState([]);
+  const [discountPercent, setDiscountPercent] = useState("0");
+  const [applyVat, setApplyVat] = useState(false);
+  const [cashReceived, setCashReceived] = useState("");
+  const [error, setError] = useState("");
+  const [completedSale, setCompletedSale] = useState(null);
   const selectedCustomer = customers.find(
-    (customer) => String(customer.id) === selectedCustomerId
-  )
+    (customer) => String(customer.id) === selectedCustomerId,
+  );
 
   const availableProducts = useMemo(() => {
-    const term = search.trim().toLowerCase()
+    const term = search.trim().toLowerCase();
 
     return products.filter((product) => {
-      const stock = Number(product.stock || 0)
+      const stock = Number(product.stock || 0);
 
       return (
         stock > 0 &&
         (!term ||
           product.name.toLowerCase().includes(term) ||
-          String(product.sku || '').toLowerCase().includes(term))
-      )
-    })
-  }, [products, search])
+          String(product.sku || "")
+            .toLowerCase()
+            .includes(term))
+      );
+    });
+  }, [products, search]);
 
   const subtotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
-  )
+    0,
+  );
 
-  const safeDiscount = Math.min(
-    100,
-    Math.max(0, Number(discountPercent) || 0)
-  )
+  const safeDiscount = Math.min(100, Math.max(0, Number(discountPercent) || 0));
 
-  const discountAmount = subtotal * (safeDiscount / 100)
-  const taxableAmount = subtotal - discountAmount
-  const vatAmount = applyVat ? taxableAmount * VAT_RATE : 0
-  const total = taxableAmount + vatAmount
-  const cash = Number(cashReceived) || 0
-  const change = cash - total
+  const discountAmount = subtotal * (safeDiscount / 100);
+  const taxableAmount = subtotal - discountAmount;
+  const vatAmount = applyVat ? taxableAmount * VAT_RATE : 0;
+  const total = taxableAmount + vatAmount;
+  const cash = Number(cashReceived) || 0;
+  const change = cash - total;
 
   function addToCart(product) {
-    setError('')
+    setError("");
     setCart((currentCart) => {
       const existing = currentCart.find(
-        (item) => item.productId === product.id
-      )
+        (item) => item.productId === product.id,
+      );
 
       if (existing) {
         if (existing.quantity >= Number(product.stock)) {
-          setError(`Only ${product.stock} units of ${product.name} are available.`)
-          return currentCart
+          setError(
+            `Only ${product.stock} units of ${product.name} are available.`,
+          );
+          return currentCart;
         }
 
         return currentCart.map((item) =>
           item.productId === product.id
             ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
+            : item,
+        );
       }
 
       return [
@@ -94,74 +94,76 @@ export default function POS() {
         {
           productId: product.id,
           name: product.name,
-          sku: product.sku || '',
+          sku: product.sku || "",
           price: Number(product.sellingPrice) || 0,
           quantity: 1,
         },
-      ]
-    })
+      ];
+    });
   }
 
   function changeQuantity(productId, delta) {
-    setError('')
+    setError("");
 
     setCart((currentCart) =>
       currentCart
         .map((item) => {
-          if (item.productId !== productId) return item
+          if (item.productId !== productId) return item;
 
-          const product = products.find((p) => p.id === productId)
-          const maxStock = Number(product?.stock || 0)
-          const nextQuantity = item.quantity + delta
+          const product = products.find((p) => p.id === productId);
+          const maxStock = Number(product?.stock || 0);
+          const nextQuantity = item.quantity + delta;
 
           if (nextQuantity > maxStock) {
-            setError(`Only ${maxStock} units are available for ${item.name}.`)
-            return item
+            setError(`Only ${maxStock} units are available for ${item.name}.`);
+            return item;
           }
 
-          return { ...item, quantity: nextQuantity }
+          return { ...item, quantity: nextQuantity };
         })
-        .filter((item) => item.quantity > 0)
-    )
+        .filter((item) => item.quantity > 0),
+    );
   }
 
   function removeFromCart(productId) {
     setCart((currentCart) =>
-      currentCart.filter((item) => item.productId !== productId)
-    )
+      currentCart.filter((item) => item.productId !== productId),
+    );
   }
 
   function completeSale(event) {
-    event.preventDefault()
-    setError('')
+    event.preventDefault();
+    setError("");
 
     if (cart.length === 0) {
-      setError('Add at least one product to the cart.')
-      return
+      setError("Add at least one product to the cart.");
+      return;
     }
 
     // Re-check stock at checkout time.
     for (const item of cart) {
-      const product = products.find((p) => p.id === item.productId)
+      const product = products.find((p) => p.id === item.productId);
 
       if (!product || Number(product.stock || 0) < item.quantity) {
-        setError(`Insufficient stock for ${item.name}. Please review the cart.`)
-        return
+        setError(
+          `Insufficient stock for ${item.name}. Please review the cart.`,
+        );
+        return;
       }
     }
 
     if (cash < total) {
-      setError('Cash received must be at least the total amount.')
-      return
+      setError("Cash received must be at least the total amount.");
+      return;
     }
 
     const sale = {
       id: `INV-${Date.now()}`,
       date: new Date().toISOString(),
       customerId: selectedCustomer?.id || null,
-      customerName: selectedCustomer?.name || 'Walk-in Customer',
-      customerPhone: selectedCustomer?.phone || '',
-      customerEmail: selectedCustomer?.email || '',
+      customerName: selectedCustomer?.name || "Walk-in Customer",
+      customerPhone: selectedCustomer?.phone || "",
+      customerEmail: selectedCustomer?.email || "",
       items: cart.map((item) => ({ ...item })),
       subtotal,
       discountPercent: safeDiscount,
@@ -169,44 +171,42 @@ export default function POS() {
       vatRate: applyVat ? VAT_RATE : 0,
       vatAmount,
       total,
-      paymentMethod: 'Cash',
+      paymentMethod: "Cash",
       cashReceived: cash,
       change: Math.max(0, change),
-      status: 'Completed',
-    }
+      status: "Completed",
+    };
 
     setProducts((currentProducts) =>
       currentProducts.map((product) => {
-        const soldItem = cart.find(
-          (item) => item.productId === product.id
-        )
+        const soldItem = cart.find((item) => item.productId === product.id);
 
         return soldItem
           ? {
               ...product,
               stock: Number(product.stock || 0) - soldItem.quantity,
             }
-          : product
-      })
-    )
+          : product;
+      }),
+    );
 
-    setSales((currentSales) => [sale, ...currentSales])
-    setCompletedSale(sale)
-    setCart([])
-    setSearch('')
-    setSelectedCustomerId('')
-    setDiscountPercent('0')
-    setApplyVat(false)
-    setCashReceived('')
+    setSales((currentSales) => [sale, ...currentSales]);
+    setCompletedSale(sale);
+    setCart([]);
+    setSearch("");
+    setSelectedCustomerId("");
+    setDiscountPercent("0");
+    setApplyVat(false);
+    setCashReceived("");
   }
 
   function printReceipt() {
-    window.print()
+    window.print();
   }
 
   function startNewSale() {
-    setCompletedSale(null)
-    setError('')
+    setCompletedSale(null);
+    setError("");
   }
 
   if (completedSale) {
@@ -220,19 +220,22 @@ export default function POS() {
           </p>
         </div>
 
-        <div id="pos-receipt" className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div
+          id="pos-receipt"
+          className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+        >
           <div className="border-b border-dashed border-gray-300 pb-4 text-center">
             <h2 className="text-xl font-bold text-gray-900">PasalOS</h2>
             <p className="text-sm text-gray-500">Sales Receipt</p>
             <p className="mt-3 text-sm font-semibold">{completedSale.id}</p>
             <p className="text-xs text-gray-500">
-              {new Date(completedSale.date).toLocaleString('en-NP')}
+              {new Date(completedSale.date).toLocaleString("en-NP")}
             </p>
           </div>
 
           <div className="border-b border-dashed border-gray-300 py-4 text-sm">
             <p>
-              <span className="text-gray-500">Customer:</span>{' '}
+              <span className="text-gray-500">Customer:</span>{" "}
               {completedSale.customerName}
             </p>
           </div>
@@ -305,7 +308,7 @@ export default function POS() {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -356,9 +359,11 @@ export default function POS() {
                     Stock: {product.stock}
                   </span>
                 </div>
-                <p className="mt-3 font-semibold text-gray-900">{product.name}</p>
+                <p className="mt-3 font-semibold text-gray-900">
+                  {product.name}
+                </p>
                 <p className="mt-1 text-xs text-gray-500">
-                  SKU: {product.sku || 'N/A'}
+                  SKU: {product.sku || "N/A"}
                 </p>
                 <div className="mt-3 flex items-center justify-between">
                   <span className="font-bold text-blue-700">
@@ -452,7 +457,10 @@ export default function POS() {
             )}
           </div>
 
-          <form onSubmit={completeSale} className="space-y-4 border-t border-gray-100 pt-4">
+          <form
+            onSubmit={completeSale}
+            className="space-y-4 border-t border-gray-100 pt-4"
+          >
             <div className="space-y-2">
               <label
                 htmlFor="pos-customer"
@@ -567,7 +575,7 @@ export default function POS() {
                 <span className="text-gray-500">Change due</span>
                 <span
                   className={`font-semibold ${
-                    change < 0 ? 'text-red-600' : 'text-emerald-700'
+                    change < 0 ? "text-red-600" : "text-emerald-700"
                   }`}
                 >
                   {formatCurrency(Math.max(0, change))}
@@ -593,5 +601,5 @@ export default function POS() {
         </section>
       </div>
     </div>
-  )
+  );
 }
