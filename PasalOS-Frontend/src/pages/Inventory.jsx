@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from "react";
 import {
   Search,
@@ -11,22 +12,33 @@ import {
   X,
 } from "lucide-react";
 
-import { useProducts } from "../hooks/useProducts";
+import { useProducts, useProductsMeta } from "../hooks/useProducts";
 import { useStockMovements } from "../hooks/useStockMovements";
-import { productCategories } from "../data/mockData";
+import { adjustStock } from "../services/inventoryService";
 import { formatCurrency } from "../utils/currency";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "../utils/permissions";
 
 export default function Inventory() {
-  // Authentication and permissions
   const { user } = useAuth();
 
-  const canManageInventory = hasPermission(user?.role, "inventory", "full");
+  const canManageInventory = hasPermission(
+    user?.role,
+    "inventory",
+    "full"
+  );
 
-  // Shared product and stock movement states
+  // Shared product state and database refresh function
   const [products, setProducts] = useProducts();
-  const [, setMovements] = useStockMovements();
+  const { categories = [], refreshProducts } = useProductsMeta();
+
+  // Database-backed stock movement history
+  const {
+    movements,
+    loading: movementsLoading,
+    error: movementsError,
+    refreshMovements,
+  } = useStockMovements();
 
   // Filter states
   const [search, setSearch] = useState("");
@@ -39,24 +51,24 @@ export default function Inventory() {
   const [quantity, setQuantity] = useState("");
   const [reason, setReason] = useState("New stock received");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState("");
 
   const LOW_STOCK_LIMIT = 10;
 
-  // Calculate total stock units
+  // Calculate inventory summary
   const totalUnits = products.reduce(
     (total, product) => total + Number(product.stock || 0),
-    0,
+    0
   );
 
-  // Calculate low stock products
   const lowStockCount = products.filter((product) => {
     const stock = Number(product.stock || 0);
     return stock > 0 && stock <= LOW_STOCK_LIMIT;
   }).length;
 
-  // Calculate out-of-stock products
   const outOfStockCount = products.filter(
-    (product) => Number(product.stock || 0) <= 0,
+    (product) => Number(product.stock || 0) <= 0
   ).length;
 
   // Search and filter products
@@ -89,95 +101,130 @@ export default function Inventory() {
     });
   }, [products, search, category, stockStatus]);
 
-  // Open stock adjustment modal
+  // Open adjustment modal
   function openAdjustment(product, type) {
-    if (!canManageInventory) return;
+    if (!canManageInventory || saving) return;
 
     setSelectedProduct(product);
     setAdjustmentType(type);
     setQuantity("");
 
-    setReason(type === "add" ? "New stock received" : "Stock correction");
+    setReason(
+      type === "add" ? "New stock received" : "Stock correction"
+    );
 
     setError("");
+    setNotice("");
   }
 
-  // Close stock adjustment modal
+  // Close adjustment modal
   function closeAdjustment() {
+    if (saving) return;
+
     setSelectedProduct(null);
     setQuantity("");
     setError("");
   }
 
-  // Save stock adjustment
-  function saveAdjustment(event) {
+  // Save stock adjustment to MySQL
+  async function saveAdjustment(event) {
     event.preventDefault();
 
-    // Permission protection
-    if (!canManageInventory) return;
-
-    if (!selectedProduct) return;
-
-    const amount = Number(quantity);
-
-    // Validate quantity
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setError("Enter a whole number greater than zero.");
+    if (!canManageInventory || !selectedProduct || saving) {
       return;
     }
 
-    // Find the latest product information
+    const amount = Number(quantity);
+
+    // Validate quantity: positive, finite, maximum 3 decimal places
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      Math.abs(amount * 1000 - Math.round(amount * 1000)) > 0.000001
+    ) {
+      setError(
+        "Enter a quantity greater than zero with up to 3 decimal places."
+      );
+      return;
+    }
+
     const currentProduct = products.find(
-      (product) => product.id === selectedProduct.id,
+      (product) =>
+        String(product.id) === String(selectedProduct.id)
     );
 
     if (!currentProduct) {
-      setError("This product could not be found. Please refresh the page.");
+      setError(
+        "This product could not be found. Please refresh the page."
+      );
       return;
     }
 
     const previousStock = Number(currentProduct.stock || 0);
 
-    // Calculate updated stock
-    const newStock =
-      adjustmentType === "add"
-        ? previousStock + amount
-        : previousStock - amount;
-
-    // Prevent negative stock
-    if (newStock < 0) {
+    if (
+      adjustmentType === "remove" &&
+      amount > previousStock
+    ) {
       setError("Stock cannot be reduced below zero.");
       return;
     }
 
-    // Create stock movement record
-    const movement = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      productId: currentProduct.id,
-      productName: currentProduct.name,
-      sku: currentProduct.sku || "",
-      type: adjustmentType === "add" ? "Stock Added" : "Stock Removed",
-      quantity: amount,
-      previousStock,
-      newStock,
-      reason,
-      date: new Date().toISOString(),
-    };
+    try {
+      setSaving(true);
+      setError("");
+      setNotice("");
 
-    // Update shared product stock
-    setProducts((currentProducts) =>
-      currentProducts.map((product) =>
-        product.id === currentProduct.id
-          ? { ...product, stock: newStock }
-          : product,
-      ),
-    );
+      // Save adjustment through the backend API.
+      const response = await adjustStock({
+        productId: currentProduct.id,
+        type: adjustmentType,
+        quantity: amount,
+        reason,
+      });
 
-    // Save stock movement history
-    setMovements((currentMovements) => [movement, ...currentMovements]);
+      const updatedStock = Number(response.data.product.stock);
 
-    // Close modal after successful adjustment
-    closeAdjustment();
+      // Immediately update shared product state.
+      setProducts((currentProducts) =>
+        currentProducts.map((product) =>
+          String(product.id) === String(currentProduct.id)
+            ? { ...product, stock: updatedStock }
+            : product
+        )
+      );
+
+      // Close the modal after the database operation succeeds.
+      setSelectedProduct(null);
+      setQuantity("");
+
+      // Refresh products and movement history from MySQL.
+      const refreshResults = await Promise.allSettled([
+        refreshProducts(),
+        refreshMovements(),
+      ]);
+
+      const refreshFailed = refreshResults.some(
+        (result) => result.status === "rejected"
+      );
+
+      if (refreshFailed) {
+        setNotice(
+          "Stock was saved successfully, but some displayed data could not refresh. Please refresh the page."
+        );
+      } else {
+        setNotice(
+          response.message || "Stock adjusted successfully."
+        );
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Failed to adjust stock. Please try again."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   // Export filtered inventory as CSV
@@ -216,8 +263,10 @@ export default function Inventory() {
     const csv = [headers, ...rows]
       .map((row) =>
         row
-          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
-          .join(","),
+          .map((value) =>
+            `"${String(value ?? "").replace(/"/g, '""')}"`
+          )
+          .join(",")
       )
       .join("\n");
 
@@ -230,6 +279,7 @@ export default function Inventory() {
 
     link.href = url;
     link.download = "pasalos-inventory.csv";
+
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -237,7 +287,7 @@ export default function Inventory() {
     URL.revokeObjectURL(url);
   }
 
-  // Inventory summary cards
+  // Summary cards
   const summaryCards = [
     {
       label: "Total Products",
@@ -267,9 +317,7 @@ export default function Inventory() {
 
   // Stock status styling
   function statusBadge(stock) {
-    if (stock <= 0) {
-      return "bg-red-50 text-red-700";
-    }
+    if (stock <= 0) return "bg-red-50 text-red-700";
 
     if (stock <= LOW_STOCK_LIMIT) {
       return "bg-amber-50 text-amber-700";
@@ -283,6 +331,13 @@ export default function Inventory() {
     if (stock <= 0) return "Out of Stock";
     if (stock <= LOW_STOCK_LIMIT) return "Low Stock";
     return "In Stock";
+  }
+
+  // Movement type display
+  function movementLabel(type) {
+    if (type === "stock_added") return "Stock Added";
+    if (type === "stock_removed") return "Stock Removed";
+    return "Adjustment";
   }
 
   return (
@@ -307,6 +362,13 @@ export default function Inventory() {
           Export CSV
         </button>
       </div>
+
+      {/* Success / refresh notice */}
+      {notice && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {notice}
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -366,7 +428,7 @@ export default function Inventory() {
           >
             <option value="All">All categories</option>
 
-            {productCategories.map((item) => (
+            {categories.map((item) => (
               <option key={item.id} value={item.name}>
                 {item.name}
               </option>
@@ -391,7 +453,9 @@ export default function Inventory() {
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <div>
-            <h2 className="font-semibold text-gray-900">Stock Overview</h2>
+            <h2 className="font-semibold text-gray-900">
+              Stock Overview
+            </h2>
 
             <p className="mt-1 text-xs text-gray-500">
               {filteredProducts.length} product(s) found
@@ -404,13 +468,9 @@ export default function Inventory() {
             <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
               <tr>
                 <th className="px-5 py-4 font-semibold">Product</th>
-
                 <th className="px-5 py-4 font-semibold">Category</th>
-
                 <th className="px-5 py-4 font-semibold">Stock Level</th>
-
                 <th className="px-5 py-4 font-semibold">Selling Price</th>
-
                 <th className="px-5 py-4 font-semibold">Status</th>
 
                 {canManageInventory && (
@@ -427,12 +487,14 @@ export default function Inventory() {
 
                 const progress = Math.min(
                   (stock / (LOW_STOCK_LIMIT * 3)) * 100,
-                  100,
+                  100
                 );
 
                 return (
-                  <tr key={product.id} className="transition hover:bg-gray-50">
-                    {/* Product information */}
+                  <tr
+                    key={product.id}
+                    className="transition hover:bg-gray-50"
+                  >
                     <td className="px-5 py-4">
                       <p className="font-semibold text-gray-900">
                         {product.name}
@@ -443,12 +505,10 @@ export default function Inventory() {
                       </p>
                     </td>
 
-                    {/* Category */}
                     <td className="px-5 py-4 text-gray-600">
-                      {product.category}
+                      {product.category || "Uncategorized"}
                     </td>
 
-                    {/* Stock level */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-100">
@@ -471,17 +531,19 @@ export default function Inventory() {
 
                       {stock <= LOW_STOCK_LIMIT && (
                         <p className="mt-1 text-xs text-amber-600">
-                          {stock <= 0 ? "Restock required" : "Below threshold"}
+                          {stock <= 0
+                            ? "Restock required"
+                            : "Below threshold"}
                         </p>
                       )}
                     </td>
 
-                    {/* Selling price */}
                     <td className="px-5 py-4 font-medium text-gray-700">
-                      {formatCurrency(Number(product.sellingPrice || 0))}
+                      {formatCurrency(
+                        Number(product.sellingPrice || 0)
+                      )}
                     </td>
 
-                    {/* Stock status */}
                     <td className="px-5 py-4">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadge(stock)}`}
@@ -490,12 +552,13 @@ export default function Inventory() {
                       </span>
                     </td>
 
-                    {/* Stock adjustment actions */}
                     {canManageInventory && (
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
                           <button
-                            onClick={() => openAdjustment(product, "add")}
+                            onClick={() =>
+                              openAdjustment(product, "add")
+                            }
                             title="Add stock"
                             aria-label={`Add stock for ${product.name}`}
                             className="rounded-lg border border-emerald-200 p-2 text-emerald-700 transition hover:bg-emerald-50"
@@ -504,7 +567,9 @@ export default function Inventory() {
                           </button>
 
                           <button
-                            onClick={() => openAdjustment(product, "remove")}
+                            onClick={() =>
+                              openAdjustment(product, "remove")
+                            }
                             disabled={stock <= 0}
                             title="Remove stock"
                             aria-label={`Remove stock for ${product.name}`}
@@ -519,14 +584,16 @@ export default function Inventory() {
                 );
               })}
 
-              {/* Empty state */}
               {filteredProducts.length === 0 && (
                 <tr>
                   <td
                     colSpan={canManageInventory ? 6 : 5}
                     className="px-5 py-12 text-center text-gray-500"
                   >
-                    <Package size={32} className="mx-auto mb-3 text-gray-300" />
+                    <Package
+                      size={32}
+                      className="mx-auto mb-3 text-gray-300"
+                    />
                     No products match your filters.
                   </td>
                 </tr>
@@ -536,15 +603,116 @@ export default function Inventory() {
         </div>
       </div>
 
+      {/* Recent stock movement history */}
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-5 py-4">
+          <h2 className="font-semibold text-gray-900">
+            Recent Stock Movements
+          </h2>
+
+          <p className="mt-1 text-xs text-gray-500">
+            Latest stock changes recorded in your database.
+          </p>
+        </div>
+
+        {movementsError && (
+          <p className="px-5 py-4 text-sm text-red-600">
+            {movementsError}
+          </p>
+        )}
+
+        {movementsLoading ? (
+          <p className="px-5 py-8 text-center text-sm text-gray-500">
+            Loading stock movements...
+          </p>
+        ) : movements.length === 0 ? (
+          <p className="px-5 py-8 text-center text-sm text-gray-500">
+            No stock movements recorded yet.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-160 text-left text-sm">
+              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-5 py-3 font-semibold">Product</th>
+                  <th className="px-5 py-3 font-semibold">Movement</th>
+                  <th className="px-5 py-3 font-semibold">Quantity</th>
+                  <th className="px-5 py-3 font-semibold">Stock Change</th>
+                  <th className="px-5 py-3 font-semibold">Reason</th>
+                  <th className="px-5 py-3 font-semibold">Date</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-100">
+                {movements.slice(0, 10).map((movement) => {
+                  const added =
+                    movement.movement_type === "stock_added";
+
+                  const date = movement.movement_date
+                    ? new Date(
+                        String(movement.movement_date).replace(" ", "T")
+                      ).toLocaleString()
+                    : "N/A";
+
+                  return (
+                    <tr key={movement.id}>
+                      <td className="px-5 py-3">
+                        <p className="font-medium text-gray-900">
+                          {movement.product_name || "Unknown product"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          SKU: {movement.product_sku || "N/A"}
+                        </p>
+                      </td>
+
+                      <td className="px-5 py-3">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            added
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-red-50 text-red-700"
+                          }`}
+                        >
+                          {movementLabel(movement.movement_type)}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-3 font-medium text-gray-800">
+                        {Number(movement.quantity).toLocaleString()}
+                      </td>
+
+                      <td className="px-5 py-3 text-gray-600">
+                        {Number(movement.previous_stock).toLocaleString()}
+                        {" → "}
+                        {Number(movement.new_stock).toLocaleString()}
+                      </td>
+
+                      <td className="px-5 py-3 text-gray-600">
+                        {movement.reason || "N/A"}
+                      </td>
+
+                      <td className="px-5 py-3 text-xs text-gray-500">
+                        {date}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Stock adjustment modal */}
       {canManageInventory && selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            {/* Modal heading */}
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">
-                  {adjustmentType === "add" ? "Add Stock" : "Remove Stock"}
+                  {adjustmentType === "add"
+                    ? "Add Stock"
+                    : "Remove Stock"}
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-500">
@@ -554,7 +722,8 @@ export default function Inventory() {
 
               <button
                 onClick={closeAdjustment}
-                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                disabled={saving}
+                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
                 aria-label="Close modal"
               >
                 <X size={20} />
@@ -563,15 +732,20 @@ export default function Inventory() {
 
             {/* Current stock */}
             <div className="mt-5 rounded-xl bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">Current stock</p>
+              <p className="text-sm text-gray-500">
+                Current stock
+              </p>
 
               <p className="mt-1 text-xl font-bold text-gray-900">
-                {selectedProduct.stock} {selectedProduct.unit || "units"}
+                {selectedProduct.stock}{" "}
+                {selectedProduct.unit || "units"}
               </p>
             </div>
 
-            {/* Adjustment form */}
-            <form onSubmit={saveAdjustment} className="mt-5 space-y-4">
+            <form
+              onSubmit={saveAdjustment}
+              className="mt-5 space-y-4"
+            >
               {/* Quantity */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -580,14 +754,21 @@ export default function Inventory() {
 
                 <input
                   type="number"
-                  min="1"
-                  step="1"
+                  min="0.001"
+                  step="0.001"
                   value={quantity}
-                  onChange={(event) => setQuantity(event.target.value)}
+                  onChange={(event) =>
+                    setQuantity(event.target.value)
+                  }
                   placeholder="Enter quantity"
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   required
+                  disabled={saving}
                 />
+
+                <p className="mt-1 text-xs text-gray-400">
+                  You can enter up to 3 decimal places.
+                </p>
               </div>
 
               {/* Reason */}
@@ -598,7 +779,10 @@ export default function Inventory() {
 
                 <select
                   value={reason}
-                  onChange={(event) => setReason(event.target.value)}
+                  onChange={(event) =>
+                    setReason(event.target.value)
+                  }
+                  disabled={saving}
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 outline-none focus:border-blue-500"
                 >
                   {(adjustmentType === "add"
@@ -622,30 +806,34 @@ export default function Inventory() {
                 </select>
               </div>
 
-              {/* Error message */}
+              {/* Error */}
               {error && (
-                <p className="text-sm font-medium text-red-600">{error}</p>
+                <p className="text-sm font-medium text-red-600">
+                  {error}
+                </p>
               )}
 
-              {/* Modal actions */}
+              {/* Actions */}
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={closeAdjustment}
-                  className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 font-semibold text-gray-700 hover:bg-gray-50"
+                  disabled={saving}
+                  className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className={`flex-1 rounded-xl px-4 py-2.5 font-semibold text-white ${
+                  disabled={saving}
+                  className={`flex-1 rounded-xl px-4 py-2.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${
                     adjustmentType === "add"
                       ? "bg-emerald-600 hover:bg-emerald-700"
                       : "bg-red-600 hover:bg-red-700"
                   }`}
                 >
-                  Confirm Adjustment
+                  {saving ? "Saving..." : "Confirm Adjustment"}
                 </button>
               </div>
             </form>
