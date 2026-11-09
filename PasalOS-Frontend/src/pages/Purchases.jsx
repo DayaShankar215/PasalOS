@@ -58,7 +58,10 @@ export default function Purchases() {
   const [purchases, setPurchases] = usePurchases();
   const [products, setProducts] = useProducts();
   const [suppliers] = useSuppliers();
-  const [, setMovements] = useStockMovements();
+  const {
+  movements,
+  refreshMovements,
+} = useStockMovements()
 
   const { user } = useAuth();
 
