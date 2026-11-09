@@ -1,71 +1,70 @@
-
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Store, UserPlus } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import './Auth.css'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Store, UserPlus } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import "./Auth.css";
 
 const Register = () => {
-  const navigate = useNavigate()
-  const { register, loading } = useAuth()
+  const navigate = useNavigate();
+  const { register, loading } = useAuth();
 
-  const [error, setError] = useState('')
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
-    shopName: '',
-    ownerName: '',
-    email: '',
-    phone: '',
-    address: '',
-    password: '',
-    confirmPassword: '',
-  })
+    shopName: "",
+    ownerName: "",
+    email: "",
+    phone: "",
+    address: "",
+    password: "",
+    confirmPassword: "",
+  });
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.')
-      return
+      setError("Passwords do not match.");
+      return;
     }
 
     if (formData.password.length < 8) {
-  setError('Password must contain at least 8 characters.')
-  return
-}
+      setError("Password must contain at least 8 characters.");
+      return;
+    }
 
-if (formData.password.length > 72) {
-  setError('Password must not exceed 72 characters.')
-  return
-}
+    if (formData.password.length > 72) {
+      setError("Password must not exceed 72 characters.");
+      return;
+    }
 
     try {
       const registrationData = {
-  shop_name: formData.shopName.trim(),
-  owner_name: formData.ownerName.trim(),
-  email: formData.email.trim(),
-  phone: formData.phone.trim(),
-  address: formData.address.trim(),
-  password: formData.password,
-}
+        shop_name: formData.shopName.trim(),
+        owner_name: formData.ownerName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        password: formData.password,
+      };
 
-const data = await register(registrationData)
+      const data = await register(registrationData);
       // Registration may or may not automatically log the owner in.
-      navigate(data.token ? '/' : '/login')
+      navigate(data.token ? "/" : "/login");
     } catch (err) {
       setError(
-        err.response?.data?.message || 'Registration failed. Please try again.'
-      )
+        err.response?.data?.message || "Registration failed. Please try again.",
+      );
     }
-  }
+  };
 
   return (
     <div className="auth-page">
@@ -173,7 +172,7 @@ const data = await register(registrationData)
           </div>
 
           <button className="auth-submit" type="submit" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? "Creating Account..." : "Create Account"}
             {!loading && <UserPlus size={18} />}
           </button>
         </form>
@@ -183,7 +182,7 @@ const data = await register(registrationData)
         </p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;
