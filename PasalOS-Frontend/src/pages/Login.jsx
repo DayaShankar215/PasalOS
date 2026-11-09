@@ -1,42 +1,42 @@
-
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Store, Eye, EyeOff, LogIn } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import './Auth.css'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Store, Eye, EyeOff, LogIn } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import "./Auth.css";
 
 const Login = () => {
-  const navigate = useNavigate()
-  const { login, loading } = useAuth()
+  const navigate = useNavigate();
+  const { login, loading } = useAuth();
 
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
+    email: "",
+    password: "",
+  });
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
     try {
-      await login(formData)
-      navigate('/')
+      await login(formData);
+      navigate("/");
     } catch (err) {
       setError(
-        err.response?.data?.message || 'Login failed. Please check your details.'
-      )
+        err.response?.data?.message ||
+          "Login failed. Please check your details.",
+      );
     }
-  }
+  };
 
   return (
     <div className="auth-page">
@@ -75,7 +75,7 @@ const Login = () => {
             <div className="auth-password">
               <input
                 id="password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Enter your password"
                 value={formData.password}
@@ -94,7 +94,7 @@ const Login = () => {
           </div>
 
           <button className="auth-submit" type="submit" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? "Signing in..." : "Sign In"}
             {!loading && <LogIn size={18} />}
           </button>
         </form>
@@ -104,7 +104,7 @@ const Login = () => {
         </p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
