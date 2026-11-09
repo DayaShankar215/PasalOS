@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from "react";
 import {
   Plus,
   Search,
@@ -15,167 +14,170 @@ import {
   Truck,
   AlertCircle,
   ShieldAlert,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { usePurchases } from '../hooks/usePurchases'
-import { useProducts } from '../hooks/useProducts'
-import { useSuppliers } from '../hooks/useSuppliers'
-import { useStockMovements } from '../hooks/useStockMovements'
-import { useAuth } from '../context/AuthContext'
-import { hasPermission } from '../utils/permissions'
-import { formatCurrency } from '../utils/currency'
+import { usePurchases } from "../hooks/usePurchases";
+import { useProducts } from "../hooks/useProducts";
+import { useSuppliers } from "../hooks/useSuppliers";
+import { useStockMovements } from "../hooks/useStockMovements";
+import { useAuth } from "../context/AuthContext";
+import { hasPermission } from "../utils/permissions";
+import { formatCurrency } from "../utils/currency";
 
 const STATUS_STYLES = {
-  Pending: 'bg-amber-100 text-amber-700',
-  Received: 'bg-emerald-100 text-emerald-700',
-  Cancelled: 'bg-red-100 text-red-700',
-}
+  Pending: "bg-amber-100 text-amber-700",
+  Received: "bg-emerald-100 text-emerald-700",
+  Cancelled: "bg-red-100 text-red-700",
+};
 
 const EMPTY_ITEM = {
-  productId: '',
+  productId: "",
   quantity: 1,
-  costPrice: '',
-}
+  costPrice: "",
+};
 
 function createPurchaseNumber() {
-  return `PUR-${Date.now().toString().slice(-8)}`
+  return `PUR-${Date.now().toString().slice(-8)}`;
 }
 
 function formatDate(date) {
-  if (!date) return '—'
+  if (!date) return "—";
 
-  const parsedDate = new Date(date)
+  const parsedDate = new Date(date);
 
-  if (Number.isNaN(parsedDate.getTime())) return '—'
+  if (Number.isNaN(parsedDate.getTime())) return "—";
 
-  return parsedDate.toLocaleDateString('en-NP', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+  return parsedDate.toLocaleDateString("en-NP", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function Purchases() {
-  const [purchases, setPurchases] = usePurchases()
-  const [products, setProducts] = useProducts()
-  const [suppliers] = useSuppliers()
-  const [, setMovements] = useStockMovements()
+  const [purchases, setPurchases] = usePurchases();
+  const [products, setProducts] = useProducts();
+  const [suppliers] = useSuppliers();
+  const [, setMovements] = useStockMovements();
 
-  const { user } = useAuth()
+  const { user } = useAuth();
 
-  const canViewPurchases = hasPermission(user?.role, 'purchases', 'view')
-  const canManagePurchases = hasPermission(user?.role, 'purchases', 'full')
+  const canViewPurchases = hasPermission(user?.role, "purchases", "view");
+  const canManagePurchases = hasPermission(user?.role, "purchases", "full");
 
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [showModal, setShowModal] = useState(false)
-  const [selectedPurchase, setSelectedPurchase] = useState(null)
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState(null);
 
-  const [supplierId, setSupplierId] = useState('')
+  const [supplierId, setSupplierId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  )
-  const [notes, setNotes] = useState('')
-  const [items, setItems] = useState([{ ...EMPTY_ITEM }])
-  const [error, setError] = useState('')
+    new Date().toISOString().slice(0, 10),
+  );
+  const [notes, setNotes] = useState("");
+  const [items, setItems] = useState([{ ...EMPTY_ITEM }]);
+  const [error, setError] = useState("");
 
-  const safePurchases = Array.isArray(purchases) ? purchases : []
-  const safeProducts = Array.isArray(products) ? products : []
-  const safeSuppliers = Array.isArray(suppliers) ? suppliers : []
+  const safePurchases = Array.isArray(purchases) ? purchases : [];
+  const safeProducts = Array.isArray(products) ? products : [];
+  const safeSuppliers = Array.isArray(suppliers) ? suppliers : [];
 
   const filteredPurchases = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = search.trim().toLowerCase();
 
     return safePurchases.filter((purchase) => {
       const matchesSearch =
         !query ||
-        String(purchase.purchaseNumber || '').toLowerCase().includes(query) ||
-        String(purchase.supplierName || '').toLowerCase().includes(query) ||
+        String(purchase.purchaseNumber || "")
+          .toLowerCase()
+          .includes(query) ||
+        String(purchase.supplierName || "")
+          .toLowerCase()
+          .includes(query) ||
         (Array.isArray(purchase.items) &&
           purchase.items.some((item) =>
-            String(item.productName || '').toLowerCase().includes(query)
-          ))
+            String(item.productName || "")
+              .toLowerCase()
+              .includes(query),
+          ));
 
       const matchesStatus =
-        statusFilter === 'All' || purchase.status === statusFilter
+        statusFilter === "All" || purchase.status === statusFilter;
 
-      return matchesSearch && matchesStatus
-    })
-  }, [safePurchases, search, statusFilter])
+      return matchesSearch && matchesStatus;
+    });
+  }, [safePurchases, search, statusFilter]);
 
-  const totalPurchases = safePurchases.length
+  const totalPurchases = safePurchases.length;
 
   const pendingPurchases = safePurchases.filter(
-    (purchase) => purchase.status === 'Pending'
-  ).length
+    (purchase) => purchase.status === "Pending",
+  ).length;
 
   const receivedPurchases = safePurchases.filter(
-    (purchase) => purchase.status === 'Received'
-  ).length
+    (purchase) => purchase.status === "Received",
+  ).length;
 
   const totalSpent = safePurchases
-    .filter((purchase) => purchase.status === 'Received')
-    .reduce((sum, purchase) => sum + Number(purchase.total || 0), 0)
+    .filter((purchase) => purchase.status === "Received")
+    .reduce((sum, purchase) => sum + Number(purchase.total || 0), 0);
 
   function resetForm() {
-    setSupplierId('')
-    setPurchaseDate(new Date().toISOString().slice(0, 10))
-    setNotes('')
-    setItems([{ ...EMPTY_ITEM }])
-    setError('')
+    setSupplierId("");
+    setPurchaseDate(new Date().toISOString().slice(0, 10));
+    setNotes("");
+    setItems([{ ...EMPTY_ITEM }]);
+    setError("");
   }
 
   function openCreateModal() {
-    if (!canManagePurchases) return
+    if (!canManagePurchases) return;
 
-    resetForm()
-    setShowModal(true)
+    resetForm();
+    setShowModal(true);
   }
 
   function closeModal() {
-    setShowModal(false)
-    setError('')
+    setShowModal(false);
+    setError("");
   }
 
   function updateItem(index, field, value) {
-    if (!canManagePurchases) return
+    if (!canManagePurchases) return;
 
     setItems((currentItems) =>
       currentItems.map((item, itemIndex) => {
-        if (itemIndex !== index) return item
+        if (itemIndex !== index) return item;
 
-        const updatedItem = { ...item, [field]: value }
+        const updatedItem = { ...item, [field]: value };
 
-        if (field === 'productId') {
+        if (field === "productId") {
           const product = safeProducts.find(
-            (product) => String(product.id) === String(value)
-          )
+            (product) => String(product.id) === String(value),
+          );
 
           updatedItem.costPrice = product
-            ? String(product.costPrice ?? '')
-            : ''
+            ? String(product.costPrice ?? "")
+            : "";
         }
 
-        return updatedItem
-      })
-    )
+        return updatedItem;
+      }),
+    );
   }
 
   function addItem() {
-    if (!canManagePurchases) return
+    if (!canManagePurchases) return;
 
-    setItems((currentItems) => [
-      ...currentItems,
-      { ...EMPTY_ITEM },
-    ])
+    setItems((currentItems) => [...currentItems, { ...EMPTY_ITEM }]);
   }
 
   function removeItem(index) {
-    if (!canManagePurchases) return
+    if (!canManagePurchases) return;
 
     setItems((currentItems) =>
-      currentItems.filter((_, itemIndex) => itemIndex !== index)
-    )
+      currentItems.filter((_, itemIndex) => itemIndex !== index),
+    );
   }
 
   const formTotal = items.reduce(
@@ -183,68 +185,68 @@ export default function Purchases() {
       sum +
       Math.max(0, Number(item.quantity) || 0) *
         Math.max(0, Number(item.costPrice) || 0),
-    0
-  )
+    0,
+  );
 
   function savePurchase(event) {
-    event.preventDefault()
+    event.preventDefault();
 
-    if (!canManagePurchases) return
+    if (!canManagePurchases) return;
 
-    setError('')
+    setError("");
 
     const supplier = safeSuppliers.find(
-      (item) => String(item.id) === String(supplierId)
-    )
+      (item) => String(item.id) === String(supplierId),
+    );
 
     if (!supplier) {
-      setError('Please select a supplier.')
-      return
+      setError("Please select a supplier.");
+      return;
     }
 
     if (!purchaseDate) {
-      setError('Please select a purchase date.')
-      return
+      setError("Please select a purchase date.");
+      return;
     }
 
     if (!items.length) {
-      setError('Please add at least one product.')
-      return
+      setError("Please add at least one product.");
+      return;
     }
 
-    const purchaseItems = []
+    const purchaseItems = [];
 
     for (const item of items) {
       const product = safeProducts.find(
-        (product) => String(product.id) === String(item.productId)
-      )
+        (product) => String(product.id) === String(item.productId),
+      );
 
-      const quantity = Number(item.quantity)
-      const costPrice = Number(item.costPrice)
+      const quantity = Number(item.quantity);
+      const costPrice = Number(item.costPrice);
 
       if (!product) {
-        setError('Please select a valid product for every item.')
-        return
+        setError("Please select a valid product for every item.");
+        return;
       }
 
       if (!Number.isFinite(quantity) || quantity <= 0) {
-        setError('Each product quantity must be greater than zero.')
-        return
+        setError("Each product quantity must be greater than zero.");
+        return;
       }
 
       if (!Number.isFinite(costPrice) || costPrice < 0) {
-        setError('Purchase cost must be zero or greater.')
-        return
+        setError("Purchase cost must be zero or greater.");
+        return;
       }
 
       purchaseItems.push({
         productId: product.id,
         productName: product.name,
-        sku: product.sku || '',
+        sku: product.sku || "",
         quantity,
         costPrice,
         subtotal: quantity * costPrice,
-      })
+      });
     }
 
     const newPurchase = {
@@ -254,156 +256,151 @@ export default function Purchases() {
       supplierName: supplier.name,
       date: purchaseDate,
       items: purchaseItems,
-      total: purchaseItems.reduce(
-        (sum, item) => sum + item.subtotal,
-        0
-      ),
-      status: 'Pending',
+      total: purchaseItems.reduce((sum, item) => sum + item.subtotal, 0),
+      status: "Pending",
       notes: notes.trim(),
       createdAt: new Date().toISOString(),
-    }
+    };
 
     setPurchases((currentPurchases) => [
       newPurchase,
       ...(Array.isArray(currentPurchases) ? currentPurchases : []),
-    ])
+    ]);
 
-    closeModal()
-    resetForm()
+    closeModal();
+    resetForm();
   }
 
   function receivePurchase(purchase) {
-    if (!canManagePurchases) return
-    if (purchase.status !== 'Pending') return
+    if (!canManagePurchases) return;
+    if (purchase.status !== "Pending") return;
 
     const confirmed = window.confirm(
-      `Mark ${purchase.purchaseNumber} as received?\n\nThis will add the purchased quantities to inventory.`
-    )
+      `Mark ${purchase.purchaseNumber} as received?\n\nThis will add the purchased quantities to inventory.`,
+    );
 
-    if (!confirmed) return
+    if (!confirmed) return;
 
     // Re-check the latest purchase status before updating stock.
     const currentPurchase = safePurchases.find(
-      (item) => item.id === purchase.id
-    )
+      (item) => item.id === purchase.id,
+    );
 
-    if (!currentPurchase || currentPurchase.status !== 'Pending') return
+    if (!currentPurchase || currentPurchase.status !== "Pending") return;
 
-    const productUpdates = []
-    const movementRecords = []
+    const productUpdates = [];
+    const movementRecords = [];
 
     for (const item of currentPurchase.items || []) {
       const product = safeProducts.find(
-        (product) => String(product.id) === String(item.productId)
-      )
+        (product) => String(product.id) === String(item.productId),
+      );
 
       if (!product) {
         window.alert(
-          `Cannot receive this purchase because "${item.productName}" no longer exists in Products.`
-        )
-        return
+          `Cannot receive this purchase because "${item.productName}" no longer exists in Products.`,
+        );
+        return;
       }
 
-      const previousStock = Number(product.stock) || 0
-      const quantity = Number(item.quantity)
+      const previousStock = Number(product.stock) || 0;
+      const quantity = Number(item.quantity);
 
       if (!Number.isFinite(quantity) || quantity <= 0) {
         window.alert(
-          `Cannot receive this purchase because "${item.productName}" has an invalid quantity.`
-        )
-        return
+          `Cannot receive this purchase because "${item.productName}" has an invalid quantity.`,
+        );
+        return;
       }
 
-      const newStock = previousStock + quantity
+      const newStock = previousStock + quantity;
 
       productUpdates.push({
         productId: product.id,
         previousStock,
         newStock,
-      })
+      });
 
       movementRecords.push({
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         productId: product.id,
         productName: product.name,
-        sku: product.sku || '',
-        type: 'Stock Added',
+        sku: product.sku || "",
+        type: "Stock Added",
         quantity,
         previousStock,
         newStock,
         reason: `Purchase ${currentPurchase.purchaseNumber}`,
         date: new Date().toISOString(),
-      })
+      });
     }
 
     // Update inventory stock.
     setProducts((currentProducts) =>
       currentProducts.map((product) => {
         const update = productUpdates.find(
-          (item) => String(item.productId) === String(product.id)
-        )
+          (item) => String(item.productId) === String(product.id),
+        );
 
-        return update
-          ? { ...product, stock: update.newStock }
-          : product
-      })
-    )
+        return update ? { ...product, stock: update.newStock } : product;
+      }),
+    );
 
     // Record stock movement history.
     setMovements((currentMovements) => [
       ...movementRecords,
       ...(Array.isArray(currentMovements) ? currentMovements : []),
-    ])
+    ]);
 
     // Mark the purchase as received.
     setPurchases((currentPurchases) =>
       currentPurchases.map((item) =>
-        item.id === currentPurchase.id && item.status === 'Pending'
+        item.id === currentPurchase.id && item.status === "Pending"
           ? {
               ...item,
-              status: 'Received',
+              status: "Received",
               receivedAt: new Date().toISOString(),
             }
-          : item
-      )
-    )
+          : item,
+      ),
+    );
   }
 
   function cancelPurchase(purchase) {
-    if (!canManagePurchases) return
+    if (!canManagePurchases) return;
 
-    if (purchase.status !== 'Pending') {
-      window.alert('Only pending purchases can be cancelled.')
-      return
+    if (purchase.status !== "Pending") {
+      window.alert("Only pending purchases can be cancelled.");
+      return;
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to cancel ${purchase.purchaseNumber}?`
-    )
+      `Are you sure you want to cancel ${purchase.purchaseNumber}?`,
+    );
 
-    if (!confirmed) return
+    if (!confirmed) return;
 
     setPurchases((currentPurchases) =>
       currentPurchases.map((item) =>
-        item.id === purchase.id && item.status === 'Pending'
-          ? { ...item, status: 'Cancelled' }
-          : item
-      )
-    )
+        item.id === purchase.id && item.status === "Pending"
+          ? { ...item, status: "Cancelled" }
+          : item,
+      ),
+    );
   }
 
   function exportCSV() {
-    if (!canManagePurchases || filteredPurchases.length === 0) return
+    if (!canManagePurchases || filteredPurchases.length === 0) return;
 
     const headers = [
-      'Purchase Number',
-      'Supplier',
-      'Date',
-      'Products',
-      'Total',
-      'Status',
-      'Notes',
-    ]
+      "Purchase Number",
+      "Supplier",
+      "Date",
+      "Products",
+      "Total",
+      "Status",
+      "Notes",
+    ];
 
     const rows = filteredPurchases.map((purchase) => [
       purchase.purchaseNumber,
@@ -411,62 +408,61 @@ export default function Purchases() {
       purchase.date,
       (purchase.items || [])
         .map((item) => `${item.productName} x ${item.quantity}`)
-        .join('; '),
+        .join("; "),
       purchase.total,
       purchase.status,
-      purchase.notes || '',
-    ])
+      purchase.notes || "",
+    ]);
 
-    const escapeCSV = (value) =>
-      `"${String(value ?? '').replace(/"/g, '""')}"`
+    const escapeCSV = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
     const csv = [headers, ...rows]
-      .map((row) => row.map(escapeCSV).join(','))
-      .join('\r\n')
+      .map((row) => row.map(escapeCSV).join(","))
+      .join("\r\n");
 
-    const blob = new Blob(['\uFEFF' + csv], {
-      type: 'text/csv;charset=utf-8;',
-    })
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
-    link.href = url
-    link.download = 'pasalos-purchases.csv'
+    link.href = url;
+    link.download = "pasalos-purchases.csv";
 
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-    URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url);
   }
 
   const statCards = [
     {
-      label: 'Total Purchases',
+      label: "Total Purchases",
       value: totalPurchases,
       icon: ShoppingCart,
-      color: 'bg-blue-100 text-blue-700',
+      color: "bg-blue-100 text-blue-700",
     },
     {
-      label: 'Pending',
+      label: "Pending",
       value: pendingPurchases,
       icon: Clock,
-      color: 'bg-amber-100 text-amber-700',
+      color: "bg-amber-100 text-amber-700",
     },
     {
-      label: 'Received',
+      label: "Received",
       value: receivedPurchases,
       icon: CheckCircle,
-      color: 'bg-emerald-100 text-emerald-700',
+      color: "bg-emerald-100 text-emerald-700",
     },
     {
-      label: 'Total Spent',
+      label: "Total Spent",
       value: formatCurrency(totalSpent),
       icon: Package,
-      color: 'bg-violet-100 text-violet-700',
+      color: "bg-violet-100 text-violet-700",
     },
-  ]
+  ];
 
   // Restrict access to unauthorized roles.
   if (!canViewPurchases) {
@@ -482,12 +478,12 @@ export default function Purchases() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-gray-500">
-            You do not have permission to access the Purchases module.
-            Please contact your shop owner if you need access.
+            You do not have permission to access the Purchases module. Please
+            contact your shop owner if you need access.
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -516,7 +512,7 @@ export default function Purchases() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {statCards.map((card) => {
-          const Icon = card.icon
+          const Icon = card.icon;
 
           return (
             <div
@@ -536,7 +532,7 @@ export default function Purchases() {
                 </div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -602,22 +598,22 @@ export default function Purchases() {
               {filteredPurchases.map((purchase) => {
                 const purchaseItems = Array.isArray(purchase.items)
                   ? purchase.items
-                  : []
+                  : [];
 
                 return (
                   <tr key={purchase.id} className="hover:bg-gray-50">
                     <td className="px-5 py-4">
                       <p className="font-semibold text-gray-900">
-                        {purchase.purchaseNumber || '—'}
+                        {purchase.purchaseNumber || "—"}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
                         {purchaseItems.length} product
-                        {purchaseItems.length !== 1 ? 's' : ''}
+                        {purchaseItems.length !== 1 ? "s" : ""}
                       </p>
                     </td>
 
                     <td className="px-5 py-4 text-gray-700">
-                      {purchase.supplierName || '—'}
+                      {purchase.supplierName || "—"}
                     </td>
 
                     <td className="px-5 py-4 text-gray-600">
@@ -628,10 +624,10 @@ export default function Purchases() {
                       {purchaseItems
                         .slice(0, 2)
                         .map((item) => item.productName)
-                        .join(', ')}
+                        .join(", ")}
                       {purchaseItems.length > 2
                         ? ` +${purchaseItems.length - 2} more`
-                        : ''}
+                        : ""}
                     </td>
 
                     <td className="px-5 py-4 font-semibold text-gray-900">
@@ -642,10 +638,10 @@ export default function Purchases() {
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                           STATUS_STYLES[purchase.status] ||
-                          'bg-gray-100 text-gray-700'
+                          "bg-gray-100 text-gray-700"
                         }`}
                       >
-                        {purchase.status || 'Unknown'}
+                        {purchase.status || "Unknown"}
                       </span>
                     </td>
 
@@ -654,7 +650,7 @@ export default function Purchases() {
                         <button
                           type="button"
                           title="View purchase"
-                          aria-label={`View ${purchase.purchaseNumber || 'purchase'}`}
+                          aria-label={`View ${purchase.purchaseNumber || "purchase"}`}
                           onClick={() => setSelectedPurchase(purchase)}
                           className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-blue-600"
                         >
@@ -662,7 +658,7 @@ export default function Purchases() {
                         </button>
 
                         {canManagePurchases &&
-                          purchase.status === 'Pending' && (
+                          purchase.status === "Pending" && (
                             <>
                               <button
                                 type="button"
@@ -686,7 +682,7 @@ export default function Purchases() {
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
 
               {filteredPurchases.length === 0 && (
@@ -702,13 +698,13 @@ export default function Purchases() {
                       </p>
 
                       <p className="mt-1 text-sm text-gray-500">
-                        {search || statusFilter !== 'All'
-                          ? 'Try changing your search or status filters.'
-                          : 'Create your first purchase to get started.'}
+                        {search || statusFilter !== "All"
+                          ? "Try changing your search or status filters."
+                          : "Create your first purchase to get started."}
                       </p>
 
                       {!search &&
-                        statusFilter === 'All' &&
+                        statusFilter === "All" &&
                         canManagePurchases && (
                           <button
                             type="button"
@@ -789,7 +785,7 @@ export default function Purchases() {
                     {safeSuppliers.map((supplier) => (
                       <option key={supplier.id} value={supplier.id}>
                         {supplier.name}
-                        {supplier.company ? ` — ${supplier.company}` : ''}
+                        {supplier.company ? ` — ${supplier.company}` : ""}
                       </option>
                     ))}
                   </select>
@@ -830,8 +826,8 @@ export default function Purchases() {
                   {items.map((item, index) => {
                     const selectedProduct = safeProducts.find(
                       (product) =>
-                        String(product.id) === String(item.productId)
-                    )
+                        String(product.id) === String(item.productId),
+                    );
 
                     return (
                       <div
@@ -849,8 +845,8 @@ export default function Purchases() {
                               onChange={(event) =>
                                 updateItem(
                                   index,
-                                  'productId',
-                                  event.target.value
+                                  "productId",
+                                  event.target.value,
                                 )
                               }
                               required
@@ -861,7 +857,7 @@ export default function Purchases() {
                               {safeProducts.map((product) => (
                                 <option key={product.id} value={product.id}>
                                   {product.name}
-                                  {product.sku ? ` (${product.sku})` : ''}
+                                  {product.sku ? ` (${product.sku})` : ""}
                                 </option>
                               ))}
                             </select>
@@ -886,8 +882,8 @@ export default function Purchases() {
                               onChange={(event) =>
                                 updateItem(
                                   index,
-                                  'quantity',
-                                  event.target.value
+                                  "quantity",
+                                  event.target.value,
                                 )
                               }
                               required
@@ -908,8 +904,8 @@ export default function Purchases() {
                               onChange={(event) =>
                                 updateItem(
                                   index,
-                                  'costPrice',
-                                  event.target.value
+                                  "costPrice",
+                                  event.target.value,
                                 )
                               }
                               required
@@ -923,7 +919,7 @@ export default function Purchases() {
                               <p className="font-semibold text-gray-900">
                                 {formatCurrency(
                                   Math.max(0, Number(item.quantity) || 0) *
-                                    Math.max(0, Number(item.costPrice) || 0)
+                                    Math.max(0, Number(item.costPrice) || 0),
                                 )}
                               </p>
                             </div>
@@ -941,7 +937,7 @@ export default function Purchases() {
                           </div>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -972,8 +968,8 @@ export default function Purchases() {
                 </div>
 
                 <p className="mt-1 text-xs text-gray-500">
-                  This purchase will be saved as Pending. Inventory changes
-                  only when you mark it as Received.
+                  This purchase will be saved as Pending. Inventory changes only
+                  when you mark it as Received.
                 </p>
               </div>
 
@@ -1019,9 +1015,7 @@ export default function Purchases() {
                 <h2 className="text-lg font-bold text-gray-900">
                   {selectedPurchase.purchaseNumber}
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Purchase details
-                </p>
+                <p className="mt-1 text-sm text-gray-500">Purchase details</p>
               </div>
 
               <button
@@ -1039,7 +1033,7 @@ export default function Purchases() {
                 <div>
                   <p className="text-sm text-gray-500">Supplier</p>
                   <p className="mt-1 font-medium text-gray-900">
-                    {selectedPurchase.supplierName || '—'}
+                    {selectedPurchase.supplierName || "—"}
                   </p>
                 </div>
 
@@ -1055,10 +1049,10 @@ export default function Purchases() {
                   <span
                     className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                       STATUS_STYLES[selectedPurchase.status] ||
-                      'bg-gray-100 text-gray-700'
+                      "bg-gray-100 text-gray-700"
                     }`}
                   >
-                    {selectedPurchase.status || 'Unknown'}
+                    {selectedPurchase.status || "Unknown"}
                   </span>
                 </div>
 
@@ -1077,9 +1071,7 @@ export default function Purchases() {
                   <thead className="bg-gray-50 text-gray-500">
                     <tr>
                       <th className="px-4 py-3 font-medium">Product</th>
-                      <th className="px-4 py-3 text-right font-medium">
-                        Qty
-                      </th>
+                      <th className="px-4 py-3 text-right font-medium">Qty</th>
                       <th className="px-4 py-3 text-right font-medium">
                         Unit Cost
                       </th>
@@ -1093,7 +1085,7 @@ export default function Purchases() {
                     {(selectedPurchase.items || []).map((item, index) => (
                       <tr key={`${item.productId}-${index}`}>
                         <td className="px-4 py-3 text-gray-800">
-                          {item.productName || '—'}
+                          {item.productName || "—"}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-600">
                           {item.quantity}
@@ -1142,5 +1134,5 @@ export default function Purchases() {
         </div>
       )}
     </div>
-  )
+  );
 }
