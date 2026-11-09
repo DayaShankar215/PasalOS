@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   ShoppingBag,
   ArrowUpRight,
@@ -11,7 +11,7 @@ import {
   Receipt,
   Boxes,
   ArrowRight,
-} from 'lucide-react'
+} from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -20,55 +20,51 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-} from 'recharts'
+} from "recharts";
 
-import { useProducts } from '../hooks/useProducts'
-import { useSales } from '../hooks/useSales'
-import { formatCurrency } from '../utils/currency'
+import { useProducts } from "../hooks/useProducts";
+import { useSales } from "../hooks/useSales";
+import { formatCurrency } from "../utils/currency";
 
 function getSaleTotal(sale) {
-  return Number(sale.total ?? sale.amount ?? 0) || 0
+  return Number(sale.total ?? sale.amount ?? 0) || 0;
 }
 
 function getSaleDate(sale) {
-  const date = new Date(sale.date)
+  const date = new Date(sale.date);
 
-  return Number.isNaN(date.getTime()) ? null : date
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function getCustomerName(sale) {
-  if (typeof sale.customer === 'string') {
-    return sale.customer || 'Walk-in Customer'
+  if (typeof sale.customer === "string") {
+    return sale.customer || "Walk-in Customer";
   }
 
-  return (
-    sale.customerName ||
-    sale.customer?.name ||
-    'Walk-in Customer'
-  )
+  return sale.customerName || sale.customer?.name || "Walk-in Customer";
 }
 
 function formatDate(value) {
-  const date = value instanceof Date ? value : new Date(value)
+  const date = value instanceof Date ? value : new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return 'N/A'
+    return "N/A";
   }
 
-  return new Intl.DateTimeFormat('en-NP', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
+  return new Intl.DateTimeFormat("en-NP", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }
 
 function StatCard({ title, value, description, icon: Icon, color }) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-emerald-50 text-emerald-600',
-    orange: 'bg-orange-50 text-orange-600',
-    purple: 'bg-purple-50 text-purple-600',
-  }
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-emerald-50 text-emerald-600",
+    orange: "bg-orange-50 text-orange-600",
+    purple: "bg-purple-50 text-purple-600",
+  };
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -76,13 +72,9 @@ function StatCard({ title, value, description, icon: Icon, color }) {
         <div>
           <p className="text-sm font-medium text-gray-500">{title}</p>
 
-          <p className="mt-3 text-2xl font-bold text-gray-900">
-            {value}
-          </p>
+          <p className="mt-3 text-2xl font-bold text-gray-900">{value}</p>
 
-          <p className="mt-2 text-xs text-gray-500">
-            {description}
-          </p>
+          <p className="mt-2 text-xs text-gray-500">{description}</p>
         </div>
 
         <div
@@ -94,111 +86,106 @@ function StatCard({ title, value, description, icon: Icon, color }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function Dashboard() {
-  const [products] = useProducts()
-  const [sales] = useSales()
+  const [products] = useProducts();
+  const [sales] = useSales();
 
-  const safeProducts = Array.isArray(products) ? products : []
-  const safeSales = Array.isArray(sales) ? sales : []
+  const safeProducts = Array.isArray(products) ? products : [];
+  const safeSales = Array.isArray(sales) ? sales : [];
 
-  const today = new Date()
+  const today = new Date();
 
   const todaySales = useMemo(() => {
     return safeSales.filter((sale) => {
-      const date = getSaleDate(sale)
+      const date = getSaleDate(sale);
 
       return (
         date &&
         date.getFullYear() === today.getFullYear() &&
         date.getMonth() === today.getMonth() &&
         date.getDate() === today.getDate() &&
-        sale.status !== 'Cancelled'
-      )
-    })
-  }, [safeSales, today.toDateString()])
+        sale.status !== "Cancelled"
+      );
+    });
+  }, [safeSales, today.toDateString()]);
 
   const totalSalesToday = todaySales.reduce(
     (total, sale) => total + getSaleTotal(sale),
-    0
-  )
+    0,
+  );
 
   const inventoryValue = safeProducts.reduce(
     (total, product) =>
-      total +
-      (Number(product.costPrice) || 0) *
-        (Number(product.stock) || 0),
-    0
-  )
+      total + (Number(product.costPrice) || 0) * (Number(product.stock) || 0),
+    0,
+  );
 
   const lowStockProducts = useMemo(() => {
-    return safeProducts.filter(
-      (product) => Number(product.stock) <= 10
-    ).sort(
-      (a, b) =>
-        (Number(a.stock) || 0) - (Number(b.stock) || 0)
-    )
-  }, [safeProducts])
+    return safeProducts
+      .filter((product) => Number(product.stock) <= 10)
+      .sort((a, b) => (Number(a.stock) || 0) - (Number(b.stock) || 0));
+  }, [safeProducts]);
 
   const recentTransactions = useMemo(() => {
     return [...safeSales]
       .sort((a, b) => {
-        const dateA = getSaleDate(a)?.getTime() || 0
-        const dateB = getSaleDate(b)?.getTime() || 0
+        const dateA = getSaleDate(a)?.getTime() || 0;
+        const dateB = getSaleDate(b)?.getTime() || 0;
 
-        return dateB - dateA
+        return dateB - dateA;
       })
-      .slice(0, 5)
-  }, [safeSales])
+      .slice(0, 5);
+  }, [safeSales]);
 
   const salesChartData = useMemo(() => {
-    const days = []
+    const days = [];
 
     for (let index = 6; index >= 0; index -= 1) {
-      const date = new Date()
+      const date = new Date();
 
-      date.setDate(date.getDate() - index)
-      date.setHours(0, 0, 0, 0)
+      date.setDate(date.getDate() - index);
+      date.setHours(0, 0, 0, 0);
 
       days.push({
         date,
-        day: date.toLocaleDateString('en-NP', {
-          weekday: 'short',
+        day: date.toLocaleDateString("en-NP", {
+          weekday: "short",
         }),
         sales: 0,
-      })
+      });
     }
 
     safeSales.forEach((sale) => {
-      if (sale.status === 'Cancelled') {
-        return
+      if (sale.status === "Cancelled") {
+        return;
       }
 
-      const saleDate = getSaleDate(sale)
+      const saleDate = getSaleDate(sale);
 
       if (!saleDate) {
-        return
+        return;
       }
 
       const matchingDay = days.find(
         (day) =>
           day.date.getFullYear() === saleDate.getFullYear() &&
           day.date.getMonth() === saleDate.getMonth() &&
-          day.date.getDate() === saleDate.getDate()
-      )
+          day.date.getDate() === saleDate.getDate(),
+      );
 
       if (matchingDay) {
-        matchingDay.sales += getSaleTotal(sale)
+        matchingDay.sales += getSaleTotal(sale);
       }
-    })
+    });
 
     return days.map(({ day, sales }) => ({
       day,
       sales,
-    }))
-  }, [safeSales, today.toDateString()])
+    }));
+  }, [safeSales, today.toDateString()]);
 
   const stats = [
     {
@@ -206,30 +193,30 @@ export default function Dashboard() {
       value: formatCurrency(totalSalesToday),
       description: `${todaySales.length} transaction(s) today`,
       icon: CircleDollarSign,
-      color: 'green',
+      color: "green",
     },
     {
-      title: 'Total Products',
-      value: safeProducts.length.toLocaleString('en-NP'),
-      description: 'Products currently registered',
+      title: "Total Products",
+      value: safeProducts.length.toLocaleString("en-NP"),
+      description: "Products currently registered",
       icon: Package,
-      color: 'blue',
+      color: "blue",
     },
     {
-      title: 'Inventory Value',
+      title: "Inventory Value",
       value: formatCurrency(inventoryValue),
-      description: 'Based on cost price and current stock',
+      description: "Based on cost price and current stock",
       icon: Boxes,
-      color: 'purple',
+      color: "purple",
     },
     {
-      title: 'Low Stock Items',
-      value: lowStockProducts.length.toLocaleString('en-NP'),
-      description: 'Products with 10 units or fewer',
+      title: "Low Stock Items",
+      value: lowStockProducts.length.toLocaleString("en-NP"),
+      description: "Products with 10 units or fewer",
       icon: AlertTriangle,
-      color: 'orange',
+      color: "orange",
     },
-  ]
+  ];
 
   return (
     <div className="space-y-6">
@@ -287,10 +274,7 @@ export default function Dashboard() {
                   bottom: 5,
                 }}
               >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
                 <XAxis
                   dataKey="day"
@@ -314,7 +298,7 @@ export default function Dashboard() {
                 <Tooltip
                   formatter={(value) => [
                     formatCurrency(Number(value)),
-                    'Sales',
+                    "Sales",
                   ]}
                   labelFormatter={(label) => `Day: ${label}`}
                 />
@@ -344,15 +328,12 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <AlertTriangle
-              size={22}
-              className="shrink-0 text-orange-500"
-            />
+            <AlertTriangle size={22} className="shrink-0 text-orange-500" />
           </div>
 
           <div className="mt-5 space-y-4">
             {lowStockProducts.slice(0, 5).map((product) => {
-              const stock = Number(product.stock) || 0
+              const stock = Number(product.stock) || 0;
 
               return (
                 <div
@@ -365,29 +346,26 @@ export default function Dashboard() {
                     </p>
 
                     <p className="mt-1 text-xs text-gray-500">
-                      SKU: {product.sku || 'N/A'}
+                      SKU: {product.sku || "N/A"}
                     </p>
                   </div>
 
                   <span
                     className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold ${
                       stock === 0
-                        ? 'bg-red-50 text-red-700'
-                        : 'bg-orange-50 text-orange-700'
+                        ? "bg-red-50 text-red-700"
+                        : "bg-orange-50 text-orange-700"
                     }`}
                   >
-                    {stock === 0 ? 'Out of stock' : `${stock} left`}
+                    {stock === 0 ? "Out of stock" : `${stock} left`}
                   </span>
                 </div>
-              )
+              );
             })}
 
             {lowStockProducts.length === 0 && (
               <div className="py-8 text-center">
-                <Package
-                  size={32}
-                  className="mx-auto mb-2 text-emerald-500"
-                />
+                <Package size={32} className="mx-auto mb-2 text-emerald-500" />
 
                 <p className="text-sm font-medium text-gray-700">
                   All products are sufficiently stocked.
@@ -442,8 +420,8 @@ export default function Dashboard() {
 
             <tbody className="divide-y divide-gray-100">
               {recentTransactions.map((sale, index) => {
-                const completed = sale.status !== 'Pending' &&
-                  sale.status !== 'Cancelled'
+                const completed =
+                  sale.status !== "Pending" && sale.status !== "Cancelled";
 
                 return (
                   <tr
@@ -457,7 +435,7 @@ export default function Dashboard() {
                         </div>
 
                         <span className="font-semibold text-gray-800">
-                          {sale.id || 'N/A'}
+                          {sale.id || "N/A"}
                         </span>
                       </div>
                     </td>
@@ -467,7 +445,7 @@ export default function Dashboard() {
                     </td>
 
                     <td className="whitespace-nowrap px-5 py-4 text-gray-600">
-                      {sale.date ? formatDate(sale.date) : 'N/A'}
+                      {sale.date ? formatDate(sale.date) : "N/A"}
                     </td>
 
                     <td className="whitespace-nowrap px-5 py-4 font-semibold text-gray-800">
@@ -478,8 +456,8 @@ export default function Dashboard() {
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                           completed
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-orange-50 text-orange-700'
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-orange-50 text-orange-700"
                         }`}
                       >
                         {completed ? (
@@ -488,20 +466,17 @@ export default function Dashboard() {
                           <ArrowDownRight size={13} />
                         )}
 
-                        {sale.status || 'Completed'}
+                        {sale.status || "Completed"}
                       </span>
                     </td>
                   </tr>
-                )
+                );
               })}
 
               {recentTransactions.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center">
-                    <Receipt
-                      size={34}
-                      className="mx-auto mb-3 text-gray-300"
-                    />
+                    <Receipt size={34} className="mx-auto mb-3 text-gray-300" />
 
                     <p className="font-medium text-gray-700">
                       No sales recorded yet
@@ -526,5 +501,5 @@ export default function Dashboard() {
         </div>
       </section>
     </div>
-  )
-} 
+  );
+}
